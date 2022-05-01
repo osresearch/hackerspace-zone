@@ -23,7 +23,7 @@ services:
       - CMD_OAUTH2_TOKEN_URL=http://spacestation:8080/realms/spacestation/protocol/openid-connect/token
       - CMD_OAUTH2_AUTHORIZATION_URL=http://spacestation:8080/realms/spacestation/protocol/openid-connect/auth
       - CMD_OAUTH2_CLIENT_ID=hedgedoc
-      - CMD_OAUTH2_CLIENT_SECRET=NNtfTHMlme8LmkTvRS0T3i3L8zGGuqHT
+      - CMD_OAUTH2_CLIENT_SECRET=abcdef1234
       - CMD_OAUTH2_PROVIDERNAME=Keycloak
       - CMD_SESSION_SECRET=abcdef1234
         # - CMD_DOMAIN=<hedgedoc.example.com>
