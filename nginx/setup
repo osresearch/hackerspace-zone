@@ -1,0 +1,26 @@
+#!/bin/bash
+ENV=env.production
+if [ ! -r "$ENV" ]; then
+	echo >&2 "$ENV: not found?"
+	exit 1
+fi
+
+source env.production
+
+if [ -z "${DOMAIN_NAME}" ]; then
+	echo >&2 "DOMAIN_NAME not set"
+	exit 1
+fi
+
+certdir="data/certbot/conf/live/${DOMAIN_NAME}"
+mkdir -p "$certdir"
+
+openssl req \
+	-x509 \
+	-newkey rsa:2048 \
+	-keyout "$certdir/privkey.pem" \
+	-out "$certdir/fullchain.pem" \
+	-sha256 \
+	-nodes \
+	-days 365 \
+	-subj "/CN=${DOMAIN_NAME}'" \

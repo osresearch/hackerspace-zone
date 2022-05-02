@@ -1,0 +1,26 @@
+server {
+	listen 80;
+	server_name login.${DOMAIN_NAME};
+	location / {
+		return 301 https://$host$request_uri;
+	}
+}
+
+server {
+	server_name login.${DOMAIN_NAME};
+	client_max_body_size 128m;
+
+	location / {
+		proxy_pass http://spacestation:8080;
+		proxy_set_header Host $host;
+		proxy_set_header X-Real-IP $remote_addr;
+	}
+
+	listen 443 ssl;
+	ssl_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
+	ssl_certificate_key /etc/letsencrypt/live/${DOMAIN_NAME}/privkey.pem;
+	include /etc/letsencrypt/options-ssl-nginx.conf;
+	ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+
+
