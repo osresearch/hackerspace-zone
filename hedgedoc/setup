@@ -8,9 +8,13 @@ cd "$DIRNAME"
 
 cd ../keycloak
 
+source env.production
+
 sudo docker-compose exec -T keycloak \
   /opt/keycloak/bin/kcadm.sh \
   create clients \
+  --user admin \
+  --password "$KEYCLOAK_ADMIN_PASSWORD" \
   -r "$REALM" \
   -f - <<EOF || die "unable to create hedgedoc client"
 {
