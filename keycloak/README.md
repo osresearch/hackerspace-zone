@@ -69,7 +69,7 @@ sudo docker-compose exec -T keycloak \
 	"clientId": "hedgerow",
 	"rootUrl": "http://spacestation:3000/",
 	"adminUrl": "http://spacestation:3000/",
-	"redirectUrls": [ "http://spacestation:3000/*" ],
+	"redirectUris": [ "http://spacestation:3000/*" ],
 	"webOrigins": [ "http://spacestation:3000" ],
 	"clientAuthenticatorType": "client-secret",
 	"secret": "abcdef1234",
