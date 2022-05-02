@@ -7,7 +7,7 @@ services:
     networks:
       - internal_network
     healthcheck:
-      test: ['CMD', 'pg_isready', '-U', "mastodon"]
+      test: ['CMD', 'pg_isready', '-U', "mastodon", "-d", "mastodon_production"]
     volumes:
       - ./database:/var/lib/postgresql/data
     environment:
