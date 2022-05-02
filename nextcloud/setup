@@ -1,0 +1,75 @@
+#!/bin/bash
+die() { echo >&2 "$@" ; exit 1 ; }
+
+DIRNAME="$(dirname $0)"
+cd "$DIRNAME"
+[ -r env.production ] && source env.production
+[ -r ../env.production ] && source ../env.production
+
+sudo docker-compose exec -u www-data -T nextcloud \
+  ./occ app:install sociallogin \
+|| die "unable to install sociallogin app"
+
+sudo docker-compose exec -u www-data -T nextcloud \
+  ./occ config:app:set sociallogin prevent_create_email_exists --value=1 \
+|| die "unable to config sociallogin"
+
+sudo docker-compose exec -u www-data -T nextcloud \
+  ./occ config:app:set sociallogin update_profile_on_login --value=1 \
+|| die "unable to config sociallogin"
+
+BASE="https://$KEYCLOAK_HOSTNAME/realms/$REALM/protocol/openid-connect"
+SECRET="$(openssl rand -hex 20)"
+PROVIDER="$(jq -c . <<EOF
+{
+	"custom_oidc": [
+		{
+			"name":		"keycloak",
+			"title":	"Keycloak",
+			"clientId":	"nextcloud",
+			"clientSecret":	"$SECRET",
+			"authorizeUrl":	"$BASE/auth",
+			"tokenUrl":	"$BASE/token",
+			"userInfoUrl":	"$BASE/userinfo",
+			"logoutUrl":	"",	
+			"displayNameClaim": "",
+			"scope":	"openid",
+			"groupsClaim":	"roles",
+			"style":	"keycloak",
+			"defaultGroup":	""
+		}
+	]
+}
+EOF
+)"
+
+sudo docker-compose exec -u www-data -T nextcloud \
+  ./occ config:app:set \
+  sociallogin custom_providers \
+  --value="$PROVIDER" \
+|| die "unable to set keycloak parameters"
+
+
+# create the keycloak side of the secret
+cd ../keycloak
+source env.production
+
+sudo docker-compose exec -T keycloak \
+  /opt/keycloak/bin/kcadm.sh \
+  create clients \
+  --server http://localhost:8080/ \
+  --user admin \
+  --password "$KEYCLOAK_ADMIN_PASSWORD" \
+  --realm master \
+  -r "$REALM" \
+  -f - <<EOF || die "unable to create client id"
+{
+	"clientId": "nextcloud",
+	"rootUrl": "https://$NEXTCLOUD_HOSTNAME/",
+	"adminUrl": "https://$NEXTCLOUD_HOSTNAME/",
+	"redirectUris": [ "https://$NEXTCLOUD_HOSTNAME/*" ],
+	"webOrigins": [ "https://$NEXTCLOUD_HOSTNAME" ],
+	"clientAuthenticatorType": "client-secret",
+	"secret": "$SECRET"
+}
+EOF

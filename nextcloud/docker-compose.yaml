@@ -20,12 +20,13 @@ services:
       - ../env.production
       - env.production
     environment:
-      - POSTGRES_HOST=database
-      - POSTGRES_DB=nextcloud
-      - POSTGRES_USER=nextcloud
-      - POSTGRES_PASSWORD=nextcloud
-      - NEXTCLOUD_TRUSTED_DOMAINS=spacestation
-      - NEXTCLOUD_ADMIN_USER=admin
+      POSTGRES_HOST: database
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD: nextcloud
+      #NEXTCLOUD_TRUSTED_DOMAINS: "${NEXTCLOUD_HOSTNAME}"
+      NEXTCLOUD_TRUSTED_DOMAINS: cloud.example.com
+      NEXTCLOUD_ADMIN_USER: admin
     volumes:
       - ./data/nextcloud:/var/www/html
     depends_on:
