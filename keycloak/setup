@@ -1,0 +1,73 @@
+#!/bin/bash
+die() { echo >&2 "ERROR: $@" ; exit 1 ; }
+info() { echo >&2 "$@" ; }
+
+DIRNAME="$(dirname $0)"
+cd "$DIRNAME"
+source ../env.production
+source ./env.production
+
+info "logging into server"
+sudo docker-compose exec keycloak \
+  /opt/keycloak/bin/kcadm.sh \
+  config credentials \
+  --server http://localhost:8080/ \
+  --user admin \
+  --password "$KEYCLOAK_ADMIN_PASSWORD" \
+  --realm master \
+|| die "unable to login"
+
+
+info "Create a new realm for '$REALM'"
+sudo docker-compose exec keycloak \
+  /opt/keycloak/bin/kcadm.sh \
+  create realms \
+  -s "realm=$REALM" \
+  -s enabled=true \
+|| die "unable to create realm"
+
+
+# https://github.com/hedgedoc/hedgedoc/issues/56
+info "Fix up a id bug"
+sudo docker-compose exec -T keycloak \
+  /opt/keycloak/bin/kcadm.sh \
+  create client-scopes \
+  -r "$REALM" \
+  -f - <<EOF || die "unable to create mapping"
+ {
+      "name": "id",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "id",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "jsonType.label": "String",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+}
+EOF
+
+
+info "Create an admin user in realm"
+sudo docker-compose exec -T keycloak \
+  /opt/keycloak/bin/kcadm.sh \
+  create users \
+  -o \
+  --fields id,username \
+  -r "$REALM" \
+  -s username=admin \
+  -s enabled=true \
+  -s 'credentials=[{"type":"'$KEYCLOAK_ADMIN_PASSWORD'","value":"admin","temporary":false}]' \
+|| die "$REALM: unable to create admin user"

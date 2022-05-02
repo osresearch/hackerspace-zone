@@ -1,19 +1,19 @@
 #!/bin/bash
+die() { echo >&2 "$@" ; exit 1 ; }
+
 ENV=env.production
 if [ ! -r "$ENV" ]; then
-	echo >&2 "$ENV: not found?"
-	exit 1
+	die "$ENV: not found?"
 fi
 
 source env.production
 
 if [ -z "${DOMAIN_NAME}" ]; then
-	echo >&2 "DOMAIN_NAME not set"
-	exit 1
+	die "DOMAIN_NAME not set"
 fi
 
 certdir="data/certbot/conf/live/${DOMAIN_NAME}"
-mkdir -p "$certdir"
+mkdir -p "$certdir" || die "$certdir: unable to make"
 
 openssl req \
 	-x509 \
@@ -24,3 +24,4 @@ openssl req \
 	-nodes \
 	-days 365 \
 	-subj "/CN=${DOMAIN_NAME}'" \
+|| die "$certdir/privkey.pem: unable to create temp key"

@@ -7,35 +7,30 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=hedgedoc
     volumes:
-      - database:/var/lib/postgresql/data
+      - ./data/database:/var/lib/postgresql/data
     restart: always
   app:
     # Make sure to use the latest release from https://hedgedoc.org/latest-release
     image: quay.io/hedgedoc/hedgedoc:1.9.3
+    env_file:
+      - ../env.production
+      - env.production
     environment:
       - CMD_DB_URL=postgres://hedgedoc:password@database:5432/hedgedoc
-      - CMD_DOMAIN=spacestation
-      - CMD_URL_ADDPORT=true
-      - CMD_OAUTH2_USER_PROFILE_URL=http://spacestation:8080/realms/spacestation/protocol/openid-connect/userinfo
+      - CMD_DOMAIN=docs.example.com
+        #- CMD_URL_ADDPORT=true
+      - CMD_OAUTH2_USER_PROFILE_URL=https://login.example.com/realms/spacestation/protocol/openid-connect/userinfo
       - CMD_OAUTH2_USER_PROFILE_USERNAME_ATTR=preferred_username
       - CMD_OAUTH2_USER_PROFILE_DISPLAY_NAME_ATTR=name
       - CMD_OAUTH2_USER_PROFILE_EMAIL_ATTR=email
-      - CMD_OAUTH2_TOKEN_URL=http://spacestation:8080/realms/spacestation/protocol/openid-connect/token
-      - CMD_OAUTH2_AUTHORIZATION_URL=http://spacestation:8080/realms/spacestation/protocol/openid-connect/auth
+      - CMD_OAUTH2_TOKEN_URL=https://login.example.com/realms/spacestation/protocol/openid-connect/token
+      - CMD_OAUTH2_AUTHORIZATION_URL=https://login.example.com/realms/spacestation/protocol/openid-connect/auth
       - CMD_OAUTH2_CLIENT_ID=hedgedoc
-      - CMD_OAUTH2_CLIENT_SECRET=abcdef1234
       - CMD_OAUTH2_PROVIDERNAME=Keycloak
-      - CMD_SESSION_SECRET=abcdef1234
-        # - CMD_DOMAIN=<hedgedoc.example.com>
-        # - CMD_PROTOCOL_USESSL=true
-        # - CMD_URL_ADDPORT=false
     volumes:
-      - uploads:/hedgedoc/public/uploads
+      - ./data/uploads:/hedgedoc/public/uploads
     ports:
       - "3000:3000"
     restart: always
     depends_on:
       - database
-volumes:
-  database:
-  uploads:

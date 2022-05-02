@@ -1,0 +1,40 @@
+#!/bin/bash
+die() { echo >&2 "$@" ; exit 1 ; }
+
+DIRNAME="$(dirname $0)"
+cd "$DIRNAME"
+[ -r env.production ] && source env.production
+[ -r ../env.production ] && source ../env.production
+
+cd ../keycloak
+
+sudo docker-compose exec -T keycloak \
+  /opt/keycloak/bin/kcadm.sh \
+  create clients \
+  -r "$REALM" \
+  -f - <<EOF || die "unable to create hedgedoc client"
+{
+	"clientId": "hedgedoc",
+	"rootUrl": "https://$HEDGEDOC_HOSTNAME",
+	"adminUrl": "https://$HEDGEDOC_HOSTNAME",
+	"redirectUris": [ "https://$HEDGEDOC_HOSTNAME/*" ],
+	"webOrigins": [ "https://$HEDGEDOC_HOSTNAME" ],
+	"clientAuthenticatorType": "client-secret",
+	"secret": "$CMD_OAUTH2_CLIENT_SECRET",
+	"defaultClientScopes": [
+		"web-origins",
+		"acr",
+		"profile",
+		"roles",
+		"id",
+		"email"
+	],
+	"optionalClientScopes": [
+		"address",
+		"phone",
+		"offline_access",
+		"microprofile-jwt"
+	]
+}
+EOF
+

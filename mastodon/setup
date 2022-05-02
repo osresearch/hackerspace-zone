@@ -1,0 +1,14 @@
+#!/bin/bash
+die() { echo >&2 "ERROR: $@" ; exit 1 ; }
+info() { echo >&2 "$@" ; }
+
+DIRNAME="$(dirname $0)"
+cd "$DIRNAME"
+source ../env.production
+source ./env.production
+
+info "configuring mastodon"
+sudo docker-compose run web \
+  rails db:setup \
+|| die "unable to login"
+

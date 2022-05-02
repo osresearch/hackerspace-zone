@@ -1,3 +1,8 @@
+This needs setup run *first* and then `docker-compose up`
+
+---
+
+
 Notes from https://gist.github.com/TrillCyborg/84939cd4013ace9960031b803a0590c4
 
 elastic search needs hacks to set permissions on data directory
