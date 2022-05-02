@@ -12,7 +12,7 @@ map $http_upgrade $connection_upgrade {
 }
 
 server {
-	server_name ${HEDGEDOC_HOSTNAME}
+	server_name ${HEDGEDOC_HOSTNAME};
 	client_max_body_size 128m;
 
 	sendfile on;

@@ -12,9 +12,8 @@ services:
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
     env_file:
+      -  ../env.production
       -  env.production
-        #environment:
-            #- NGINX_ENVSUBST_OUTPUT_DIR=/tmp/sites-enabled
   certbot:
     image: certbot/certbot
     volumes:
