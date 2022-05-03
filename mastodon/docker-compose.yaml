@@ -46,7 +46,7 @@ services:
         soft: -1
         hard: -1
 
-  web:
+  mastodon:
     image: tootsuite/mastodon
     restart: always
     env_file:
@@ -70,7 +70,6 @@ services:
       - ./data/system:/mastodon/public/system
 
   streaming:
-    build: .
     image: tootsuite/mastodon
     restart: always
     env_file:
@@ -91,7 +90,6 @@ services:
       - redis
 
   sidekiq:
-    build: .
     image: tootsuite/mastodon
     restart: always
     env_file:

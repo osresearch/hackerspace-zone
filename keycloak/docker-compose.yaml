@@ -17,10 +17,12 @@ services:
 
   keycloak:
       image: quay.io/keycloak/keycloak:18.0.0
-      entrypoint: /opt/keycloak/bin/kc.sh start-dev --proxy=edge
+      entrypoint: /opt/keycloak/bin/kc.sh start --hostname="$${KEYCLOAK_HOSTNAME}" --proxy=edge
+      user: "0:0" # otherwise the persistent data directory is not writable
       env_file:
         - ../env.production
         - env.production
+        - env.secrets
       environment:
         DB_VENDOR: MYSQL
         DB_ADDR: mysql
@@ -28,9 +30,11 @@ services:
         DB_USER: keycloak
         DB_PASSWORD: password
         KEYCLOAK_ADMIN: admin
+        # KEYCLOAK_ADMIN_PASSWORD should be set in env.secrets
         PROXY_ADDRESS_FORWARDING: 'true'
       volumes:
         - ./data/certs:/etc/x509/https
+        - ./data/keycloak:/opt/keycloak/data
       ports:
         - 8080:8080
       depends_on:

@@ -1,23 +1,30 @@
 #!/bin/bash
 die() { echo >&2 "$@" ; exit 1 ; }
 
+DIRNAME="$(dirname $0)"
+cd "$DIRNAME"
+
 source ../env.production
 source ./env.production
 
-domain_args="-d $DOMAIN_NAME,$KEYCLOAK_HOSTNAME,$HEDGEDOC_HOSTNAME,$MASTODON_HOSTNAME,$NEXTCLOUD_HOSTNAME"
+domain_args="-d $DOMAIN_NAME,$KEYCLOAK_HOSTNAME,$HEDGEDOC_HOSTNAME,$MASTODON_HOSTNAME,$NEXTCLOUD_HOSTNAME,$GRAFANA_HOSTNAME"
 rsa_key_size=2048
 
 set -x
 
-# move the old live directory away
-rm -rf data/certbot/conf/live.old
-mv data/certbot/conf/live data/certbot/conf/live.old
+# move the temp live directory away if
+# this is the first time we've run anything here
+if [ ! -d "data/certbot/conf/accounts" ]; then
+	echo "deleting temp keys"
+	rm -rf data/certbot/conf/live
+fi
 
 docker-compose run --rm certbot \
-  certonly --webroot -w /var/www/certbot \
-    $staging_arg \
+  certonly \
+    --webroot \
+    --webroot-path /var/www/certbot \
     --email "admin@$DOMAIN_NAME" \
-    --rsa-key-size $rsa_key_size \
+    --rsa-key-size "$rsa_key_size" \
     --agree-tos \
     --no-eff-email \
     --force-renewal \

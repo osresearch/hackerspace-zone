@@ -6,6 +6,7 @@ DIRNAME="$(dirname $0)"
 cd "$DIRNAME"
 source ../env.production
 source ./env.production
+source ./env.secrets
 
 info "logging into server"
 sudo docker-compose exec keycloak \

@@ -18,40 +18,39 @@ OTP_SECRET=000000
 OIDC_CLIENT_SECRET=000000
 EOF
 
+# have to bring it all down before we touch the files
+docker-compose down
+
 if [ -z "$MASTODON_SKIP_DB_INIT" ]; then
 	info "configuring mastodon"
-	sudo docker-compose run web \
+	sudo docker-compose run --rm mastodon \
 	  rails db:setup \
 	|| die "unable to login"
 fi
 
-# now create the real secrets file
-echo > env.secrets "# DO NOT CHECK IN"
+OIDC_CLIENT_SECRET="$(openssl rand -hex 32)"
 
-sudo docker-compose run web \
+# now create the real secrets file,
+# along with some parameters that should be in the environment
+cat <<EOF > env.secrets
+# DO NOT CHECK IN
+LOCAL_DOMAIN=$MASTODON_HOSTNAME
+OIDC_DISPLAY_NAME=$REALM
+OIDC_ISSUER=https://$KEYCLOAK_HOSTNAME/realms/$REALM
+OIDC_REDIRECT_URI=https://$MASTODON_HOSTNAME/auth/auth/openid_connect/callback
+OIDC_CLIENT_SECRET=$OIDC_CLIENT_SECRET
+SECRET_KEY_BASE=$(openssl rand -hex 32)
+OTP_SECRET=$(openssl rand -hex 32)
+EOF
+
+docker-compose run --rm mastodon \
   rails mastodon:webpush:generate_vapid_key \
   >> env.secrets \
 || die "unable to generate vapid key"
 
-echo "SECRET_KEY_BASE=$(openssl rand -hex 32)" >> env.secrets
-echo "OTP_SECRET=$(openssl rand -hex 32)" >> env.secrets
 
-CLIENT_SECRET="$(openssl rand -hex 32)"
-echo "OIDC_CLIENT_SECRET=$CLIENT_SECRET" >> env.secrets
-
-# create the keycloak side of the secret
-cd ../keycloak
-source env.production
-
-sudo docker-compose exec -T keycloak \
-  /opt/keycloak/bin/kcadm.sh \
-  create clients \
-  --server http://localhost:8080/ \
-  --user admin \
-  --password "$KEYCLOAK_ADMIN_PASSWORD" \
-  --realm master \
-  -r "$REALM" \
-  -f - <<EOF || die "unable to create client id"
+../keycloak/client-delete mastodon
+../keycloak/client-create <<EOF || die "Unable to create keycloak client"
 {
 	"clientId": "mastodon",
 	"rootUrl": "https://$MASTODON_HOSTNAME/",
@@ -59,6 +58,8 @@ sudo docker-compose exec -T keycloak \
 	"redirectUris": [ "https://$MASTODON_HOSTNAME/*" ],
 	"webOrigins": [ "https://$MASTODON_HOSTNAME" ],
 	"clientAuthenticatorType": "client-secret",
-	"secret": "$CLIENT_SECRET"
+	"secret": "$OIDC_CLIENT_SECRET"
 }
 EOF
+
+docker-compose up -d

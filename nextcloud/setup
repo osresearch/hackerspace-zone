@@ -3,23 +3,25 @@ die() { echo >&2 "$@" ; exit 1 ; }
 
 DIRNAME="$(dirname $0)"
 cd "$DIRNAME"
-[ -r env.production ] && source env.production
-[ -r ../env.production ] && source ../env.production
+source ../env.production || die "no top level env?"
+source env.production || die "no local env?"
 
-sudo docker-compose exec -u www-data -T nextcloud \
-  ./occ app:install sociallogin \
-|| die "unable to install sociallogin app"
+if [ ! -r "env.secrets" ]; then
+	NEXTCLOUD_CLIENT_SECRET="$(openssl rand -hex 32)"
+	NEXTCLOUD_ADMIN_PASSWORD="$(openssl rand -hex 4)"
 
-sudo docker-compose exec -u www-data -T nextcloud \
-  ./occ config:app:set sociallogin prevent_create_email_exists --value=1 \
-|| die "unable to config sociallogin"
-
-sudo docker-compose exec -u www-data -T nextcloud \
-  ./occ config:app:set sociallogin update_profile_on_login --value=1 \
-|| die "unable to config sociallogin"
+	echo "Generating secrets: admin password $NEXTCLOUD_ADMIN_PASSWORD"
+	cat <<EOF > env.secrets
+# Do not check in!
+NEXTCLOUD_ADMIN_PASSWORD=$NEXTCLOUD_ADMIN_PASSWORD
+NEXTCLOUD_TRUSTED_DOMAINS=$NEXTCLOUD_HOSTNAME
+NEXTCLOUD_CLIENT_SECRET=$NEXTCLOUD_CLIENT_SECRET
+EOF
+else
+	source env.secrets || die "no secret env?"
+fi
 
 BASE="https://$KEYCLOAK_HOSTNAME/realms/$REALM/protocol/openid-connect"
-SECRET="$(openssl rand -hex 20)"
 PROVIDER="$(jq -c . <<EOF
 {
 	"custom_oidc": [
@@ -27,15 +29,15 @@ PROVIDER="$(jq -c . <<EOF
 			"name":		"keycloak",
 			"title":	"Keycloak",
 			"clientId":	"nextcloud",
-			"clientSecret":	"$SECRET",
+			"clientSecret":	"$NEXTCLOUD_CLIENT_SECRET",
 			"authorizeUrl":	"$BASE/auth",
 			"tokenUrl":	"$BASE/token",
 			"userInfoUrl":	"$BASE/userinfo",
-			"logoutUrl":	"",	
-			"displayNameClaim": "",
+			"logoutUrl":	"$BASE/logout",
 			"scope":	"openid",
 			"groupsClaim":	"roles",
 			"style":	"keycloak",
+			"displayNameClaim": "",
 			"defaultGroup":	""
 		}
 	]
@@ -43,26 +45,27 @@ PROVIDER="$(jq -c . <<EOF
 EOF
 )"
 
-sudo docker-compose exec -u www-data -T nextcloud \
-  ./occ config:app:set \
-  sociallogin custom_providers \
-  --value="$PROVIDER" \
-|| die "unable to set keycloak parameters"
+
+docker-compose up -d || die "unable to bring up docker"
+
+# wait for the nextcloud instance to be responsive
+# TODO: how to find out if it is ready?
+echo "SLEEPING..."
+sleep 30
 
 
-# create the keycloak side of the secret
-cd ../keycloak
-source env.production
 
-sudo docker-compose exec -T keycloak \
-  /opt/keycloak/bin/kcadm.sh \
-  create clients \
-  --server http://localhost:8080/ \
-  --user admin \
-  --password "$KEYCLOAK_ADMIN_PASSWORD" \
-  --realm master \
-  -r "$REALM" \
-  -f - <<EOF || die "unable to create client id"
+docker-compose exec -u www-data -T nextcloud bash -x <<EOF || die "unable to configure sociallogin"
+./occ app:remove sociallogin || echo "not yet installed"
+./occ app:install sociallogin || exit 1
+./occ config:app:set sociallogin prevent_create_email_exists --value=1 || exit 1
+./occ config:app:set sociallogin update_profile_on_login --value=1 || exit 1
+./occ config:app:set sociallogin custom_providers --value='$PROVIDER' || exit 1
+EOF
+
+../keycloak/client-delete 'nextcloud' || echo "client did not exist?"
+
+../keycloak/client-create << EOF || die "unable to create client id"
 {
 	"clientId": "nextcloud",
 	"rootUrl": "https://$NEXTCLOUD_HOSTNAME/",
@@ -70,6 +73,6 @@ sudo docker-compose exec -T keycloak \
 	"redirectUris": [ "https://$NEXTCLOUD_HOSTNAME/*" ],
 	"webOrigins": [ "https://$NEXTCLOUD_HOSTNAME" ],
 	"clientAuthenticatorType": "client-secret",
-	"secret": "$SECRET"
+	"secret": "$NEXTCLOUD_CLIENT_SECRET"
 }
 EOF

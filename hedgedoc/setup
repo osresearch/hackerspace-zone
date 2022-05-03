@@ -3,20 +3,24 @@ die() { echo >&2 "$@" ; exit 1 ; }
 
 DIRNAME="$(dirname $0)"
 cd "$DIRNAME"
-[ -r env.production ] && source env.production
-[ -r ../env.production ] && source ../env.production
+source ../env.production || die "no top levle env?"
+source env.production || die "no local env?"
 
-cd ../keycloak
+docker-compose down
 
-source env.production
+# regenerate the client secrets
+CLIENT_SECRET="$(openssl rand -hex 20)"
+SESSION_SECRET="$(openssl rand -hex 20)"
 
-sudo docker-compose exec -T keycloak \
-  /opt/keycloak/bin/kcadm.sh \
-  create clients \
-  --user admin \
-  --password "$KEYCLOAK_ADMIN_PASSWORD" \
-  -r "$REALM" \
-  -f - <<EOF || die "unable to create hedgedoc client"
+rm -f env.secrets
+cat <<EOF > env.secrets
+CMD_OAUTH2_CLIENT_SECRET=$CLIENT_SECRET
+CMD_SESSION_SECRET=$SESSION_SECRET
+EOF
+
+../keycloak/client-delete hedgedoc
+
+../keycloak/client-create <<EOF || die "unable to create hedgedoc client"
 {
 	"clientId": "hedgedoc",
 	"rootUrl": "https://$HEDGEDOC_HOSTNAME",
@@ -24,7 +28,7 @@ sudo docker-compose exec -T keycloak \
 	"redirectUris": [ "https://$HEDGEDOC_HOSTNAME/*" ],
 	"webOrigins": [ "https://$HEDGEDOC_HOSTNAME" ],
 	"clientAuthenticatorType": "client-secret",
-	"secret": "$CMD_OAUTH2_CLIENT_SECRET",
+	"secret": "$CLIENT_SECRET",
 	"defaultClientScopes": [
 		"web-origins",
 		"acr",
@@ -42,3 +46,5 @@ sudo docker-compose exec -T keycloak \
 }
 EOF
 
+
+docker-compose up -d || die "unable to start container"
