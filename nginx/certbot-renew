@@ -1,4 +1,6 @@
 #!/bin/bash
+die() { echo >&2 "$@" ; exit 1 ; }
+
 source ../env.production
 source ./env.production
 
@@ -7,12 +9,17 @@ rsa_key_size=2048
 
 set -x
 
+# move the old live directory away
+rm -rf data/certbot/conf/live.old
+mv data/certbot/conf/live data/certbot/conf/live.old
+
 docker-compose run --rm certbot \
   certonly --webroot -w /var/www/certbot \
     $staging_arg \
     --email "admin@$DOMAIN_NAME" \
     --rsa-key-size $rsa_key_size \
     --agree-tos \
+    --no-eff-email \
     --force-renewal \
     $domain_args \
 || die "unable to renew!"
