@@ -12,3 +12,27 @@ sudo docker-compose run web \
   rails db:setup \
 || die "unable to login"
 
+
+# create the keycloak side of the secret
+cd ../keycloak
+source env.production
+
+sudo docker-compose exec -T keycloak \
+  /opt/keycloak/bin/kcadm.sh \
+  create clients \
+  --server http://localhost:8080/ \
+  --user admin \
+  --password "$KEYCLOAK_ADMIN_PASSWORD" \
+  --realm master \
+  -r "$REALM" \
+  -f - <<EOF || die "unable to create client id"
+{
+	"clientId": "mastodon",
+	"rootUrl": "https://$MASTODON_HOSTNAME/",
+	"adminUrl": "https://$MASTODON_HOSTNAME/",
+	"redirectUris": [ "https://$MASTODON_HOSTNAME/*" ],
+	"webOrigins": [ "https://$MASTODON_HOSTNAME" ],
+	"clientAuthenticatorType": "client-secret",
+	"secret": "$OIDC_CLIENT_SECRET"
+}
+EOF

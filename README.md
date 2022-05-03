@@ -25,3 +25,8 @@ sudo docker-compose up -d
 ./setup
 ```
 
+```
+cd ../mastodon
+./setup
+sudo docker-compose up
+```
