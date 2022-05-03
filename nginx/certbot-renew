@@ -2,7 +2,7 @@
 source ../env.production
 source ./env.production
 
-domain_args="-d $KEYCLOAK_HOSTNAME,$HEDGEDOC_HOSTNAME,$MASTODON_HOSTNAME,$NEXTCLOUD_HOSTNAME"
+domain_args="-d $DOMAIN_NAME,$KEYCLOAK_HOSTNAME,$HEDGEDOC_HOSTNAME,$MASTODON_HOSTNAME,$NEXTCLOUD_HOSTNAME"
 rsa_key_size=2048
 
 set -x
@@ -10,8 +10,11 @@ set -x
 docker-compose run --rm certbot \
   certonly --webroot -w /var/www/certbot \
     $staging_arg \
-    $email_arg \
-    $domain_args \
+    --email "admin@$DOMAIN_NAME" \
     --rsa-key-size $rsa_key_size \
     --agree-tos \
-    --force-renewal
+    --force-renewal \
+    $domain_args \
+|| die "unable to renew!"
+
+docker-compose exec nginx nginx -s reload

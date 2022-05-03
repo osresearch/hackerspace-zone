@@ -1,0 +1,41 @@
+server {
+	listen 80;
+	server_name ${DOMAIN_NAME};
+	location / {
+		return 301 https://$host$request_uri;
+	}
+}
+
+server {
+	server_name ${DOMAIN_NAME};
+	client_max_body_size 128m;
+
+	sendfile on;
+	tcp_nopush on;
+	tcp_nodelay on;
+	keepalive_timeout 65;
+	types_hash_max_size 2048;
+	#include /etc/nginx/mime.types;
+	#default_type application/octet-stream;
+
+	gzip on;
+	gzip_disable "msie6";
+
+	proxy_read_timeout 1800s;
+
+	# required to avoid HTTP 411: see Issue #1486 (https://github.com/dotcloud/docker/issues/1486)
+	chunked_transfer_encoding on;
+
+	location / {
+	}
+
+	listen 443 ssl;
+	ssl_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
+	ssl_certificate_key /etc/letsencrypt/live/${DOMAIN_NAME}/privkey.pem;
+	include /etc/letsencrypt/options-ssl-nginx.conf;
+	include /etc/letsencrypt/challenge.conf;
+	ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+}
+
+
