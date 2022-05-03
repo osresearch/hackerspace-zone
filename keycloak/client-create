@@ -1,0 +1,19 @@
+#!/bin/bash
+die() { echo >&2 "$@" ; exit 1 ; }
+
+DIRNAME="$(dirname $0)"
+cd "$DIRNAME"
+
+source ../env.production || die "no top levle env?"
+source env.production || die "no local env?"
+source env.secrets || die "no local secrets?"
+
+sudo docker-compose exec -T keycloak \
+  /opt/keycloak/bin/kcadm.sh \
+  create clients \
+  --server http://localhost:8080/ \
+  --user admin \
+  --password "$KEYCLOAK_ADMIN_PASSWORD" \
+  -r "$REALM" \
+  -f - \
+|| die "create client failed"
