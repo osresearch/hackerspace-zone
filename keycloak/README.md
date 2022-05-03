@@ -66,7 +66,7 @@ sudo docker-compose exec -T keycloak \
   -r spacestation \
   -f - <<EOF
 {
-	"clientId": "hedgerow",
+	"clientId": "hedgedoc",
 	"rootUrl": "http://spacestation:3000/",
 	"adminUrl": "http://spacestation:3000/",
 	"redirectUris": [ "http://spacestation:3000/*" ],

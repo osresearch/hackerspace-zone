@@ -6,6 +6,7 @@ if [ ! -r "$ENV" ]; then
 	die "$ENV: not found?"
 fi
 
+source ../env.production
 source env.production
 
 if [ -z "${DOMAIN_NAME}" ]; then

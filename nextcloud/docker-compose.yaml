@@ -25,8 +25,9 @@ services:
       POSTGRES_USER: nextcloud
       POSTGRES_PASSWORD: nextcloud
       #NEXTCLOUD_TRUSTED_DOMAINS: "${NEXTCLOUD_HOSTNAME}"
-      NEXTCLOUD_TRUSTED_DOMAINS: cloud.example.com
+      NEXTCLOUD_TRUSTED_DOMAINS: cloud.hackerspace.zone
       NEXTCLOUD_ADMIN_USER: admin
+      OVERWRITEPROTOCOL: https
     volumes:
       - ./data/nextcloud:/var/www/html
     depends_on:

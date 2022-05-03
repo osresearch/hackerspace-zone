@@ -33,6 +33,5 @@ services:
         - ./data/certs:/etc/x509/https
       ports:
         - 8080:8080
-        - 8443:8443
       depends_on:
         - mysql

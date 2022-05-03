@@ -9,7 +9,7 @@ services:
     volumes:
       - ./data/database:/var/lib/postgresql/data
     restart: always
-  app:
+  hedgedoc:
     # Make sure to use the latest release from https://hedgedoc.org/latest-release
     image: quay.io/hedgedoc/hedgedoc:1.9.3
     env_file:
@@ -17,14 +17,14 @@ services:
       - env.production
     environment:
       - CMD_DB_URL=postgres://hedgedoc:password@database:5432/hedgedoc
-      - CMD_DOMAIN=docs.example.com
-        #- CMD_URL_ADDPORT=true
-      - CMD_OAUTH2_USER_PROFILE_URL=https://login.example.com/realms/spacestation/protocol/openid-connect/userinfo
+      - CMD_PROTOCOL_USESSL=true
+      - CMD_DOMAIN=docs.hackerspace.zone
+      - CMD_OAUTH2_AUTHORIZATION_URL=https://login.hackerspace.zone/realms/hackerspace/protocol/openid-connect/auth
+      - CMD_OAUTH2_TOKEN_URL=https://login.hackerspace.zone/realms/hackerspace/protocol/openid-connect/token
+      - CMD_OAUTH2_USER_PROFILE_URL=https://login.hackerspace.zone/realms/hackerspace/protocol/openid-connect/userinfo
       - CMD_OAUTH2_USER_PROFILE_USERNAME_ATTR=preferred_username
       - CMD_OAUTH2_USER_PROFILE_DISPLAY_NAME_ATTR=name
       - CMD_OAUTH2_USER_PROFILE_EMAIL_ATTR=email
-      - CMD_OAUTH2_TOKEN_URL=https://login.example.com/realms/spacestation/protocol/openid-connect/token
-      - CMD_OAUTH2_AUTHORIZATION_URL=https://login.example.com/realms/spacestation/protocol/openid-connect/auth
       - CMD_OAUTH2_CLIENT_ID=hedgedoc
       - CMD_OAUTH2_PROVIDERNAME=Keycloak
     volumes:

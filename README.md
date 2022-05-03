@@ -1,4 +1,4 @@
-
+apt install jq docker-compose
 
 ```
 cd keycloak
