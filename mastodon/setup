@@ -7,11 +7,37 @@ cd "$DIRNAME"
 source ../env.production
 source ./env.production
 
-info "configuring mastodon"
-sudo docker-compose run web \
-  rails db:setup \
-|| die "unable to login"
+mkdir -p data/system
+chmod 777 data/system
 
+rm -f env.secrets
+cat > env.secrets << EOF
+# Fake file to make db:setup happy
+SECRET_KEY_BASE=000000
+OTP_SECRET=000000
+OIDC_CLIENT_SECRET=000000
+EOF
+
+if [ -z "$MASTODON_SKIP_DB_INIT" ]; then
+	info "configuring mastodon"
+	sudo docker-compose run web \
+	  rails db:setup \
+	|| die "unable to login"
+fi
+
+# now create the real secrets file
+echo > env.secrets "# DO NOT CHECK IN"
+
+sudo docker-compose run web \
+  rails mastodon:webpush:generate_vapid_key \
+  >> env.secrets \
+|| die "unable to generate vapid key"
+
+echo "SECRET_KEY_BASE=$(openssl rand -hex 32)" >> env.secrets
+echo "OTP_SECRET=$(openssl rand -hex 32)" >> env.secrets
+
+CLIENT_SECRET="$(openssl rand -hex 32)"
+echo "OIDC_CLIENT_SECRET=$CLIENT_SECRET" >> env.secrets
 
 # create the keycloak side of the secret
 cd ../keycloak
@@ -33,6 +59,6 @@ sudo docker-compose exec -T keycloak \
 	"redirectUris": [ "https://$MASTODON_HOSTNAME/*" ],
 	"webOrigins": [ "https://$MASTODON_HOSTNAME" ],
 	"clientAuthenticatorType": "client-secret",
-	"secret": "$OIDC_CLIENT_SECRET"
+	"secret": "$CLIENT_SECRET"
 }
 EOF
