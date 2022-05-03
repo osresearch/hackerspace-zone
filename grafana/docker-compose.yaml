@@ -1,0 +1,26 @@
+version: "3"
+
+services:
+  grafana:
+    image: grafana/grafana-oss:8.5.1
+    user: "0:0"
+    environment:
+      GF_AUTH_GENERIC_OAUTH_ENABLED: 'True'
+      GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP: 'True' # otherwise no login is possible
+      #GF_AUTH_GENERIC_OAUTH_TEAM_IDS: ''
+      #GF_AUTH_GENERIC_OAUTH_ALLOWED_ORGANIZATIONS: ''
+      #GF_AUTH_GENERIC_OAUTH_ALLOWED_DOMAINS: '<domains>'
+      GF_AUTH_GENERIC_OAUTH_NAME: Keycloak
+      GF_AUTH_GENERIC_OAUTH_CLIENT_ID: grafana
+      GF_AUTH_GENERIC_OAUTH_SCOPES: openid profile email
+      # GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET is in env.secrets
+      # auth URLs are in the env.secrets since they have hostname expansion
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+    restart: unless-stopped
+    ports:
+      - 8000:3000
+    env_file:
+      - ../env.production
+      - env.production
+      - env.secrets
