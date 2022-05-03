@@ -15,9 +15,13 @@ services:
     env_file:
       - ../env.production
       - env.production
+      - env.secrets
     environment:
       - CMD_DB_URL=postgres://hedgedoc:password@database:5432/hedgedoc
       - CMD_PROTOCOL_USESSL=true
+      - CMD_ALLOW_ANONYMOUS=false  # anonymous user's can't create notes
+      - CMD_ALLOW_ANONYMOUS_EDITS=true # but they can be invited to edit notes
+      - CMD_EMAIL=false # only oauth logins
       - CMD_DOMAIN=docs.hackerspace.zone
       - CMD_OAUTH2_AUTHORIZATION_URL=https://login.hackerspace.zone/realms/hackerspace/protocol/openid-connect/auth
       - CMD_OAUTH2_TOKEN_URL=https://login.hackerspace.zone/realms/hackerspace/protocol/openid-connect/token
