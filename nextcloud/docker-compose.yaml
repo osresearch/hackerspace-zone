@@ -3,17 +3,17 @@ version: "3"
 services:
   database:
     image: postgres:13.4-alpine
+    restart: always
     environment:
       - POSTGRES_USER=nextcloud
       - POSTGRES_PASSWORD=nextcloud
       - POSTGRES_DB=nextcloud
     volumes:
       - ../data/nextcloud/database:/var/lib/postgresql/data
-    restart: always
 
   nextcloud:
     image: nextcloud:23.0.4
-    restart: unless-stopped
+    restart: always
     ports:
       - 9000:80
     env_file:

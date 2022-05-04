@@ -17,7 +17,7 @@ services:
       # auth URLs are in the env.secrets since they have hostname expansion
     volumes:
       - ../data/grafana:/var/lib/grafana
-    restart: unless-stopped
+    restart: always
     ports:
       - 8000:3000
     env_file:
