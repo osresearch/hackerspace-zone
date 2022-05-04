@@ -1,12 +1,4 @@
 server {
-	listen 80;
-	server_name ${NEXTCLOUD_HOSTNAME};
-	location / {
-		return 301 https://$host$request_uri;
-	}
-}
-
-server {
 	server_name ${NEXTCLOUD_HOSTNAME};
 	client_max_body_size 128m;
 

@@ -1,13 +1,13 @@
+# Redirect *all* port 80 traffic to the same thing on port 443
 server {
-	listen 80;
-	server_name ${DOMAIN_NAME};
+	listen 80 default_server;
 	location / {
 		return 301 https://$host$request_uri;
 	}
 }
 
 server {
-	server_name ${DOMAIN_NAME};
+	#server_name ${DOMAIN_NAME} default;
 	client_max_body_size 128m;
 
 	sendfile on;
@@ -27,9 +27,14 @@ server {
 	chunked_transfer_encoding on;
 
 	location / {
+		root /var/www;
 	}
 
-	listen 443 ssl;
+	location /.well-known/matrix {
+		proxy_pass https://${MATRIX_HOSTNAME};
+	}
+
+	listen 443 ssl default_server;
 	ssl_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
 	ssl_certificate_key /etc/letsencrypt/live/${DOMAIN_NAME}/privkey.pem;
 	include /etc/nginx/includes/options-ssl-nginx.conf;

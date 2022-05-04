@@ -1,12 +1,4 @@
 server {
-	listen 80;
-	server_name login.${DOMAIN_NAME};
-	location / {
-		return 301 https://$host$request_uri;
-	}
-}
-
-server {
 	server_name login.${DOMAIN_NAME};
 	client_max_body_size 128m;
 
