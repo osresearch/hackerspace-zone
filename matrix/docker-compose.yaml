@@ -1,0 +1,27 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:13.4-alpine
+    restart: unless-stopped
+    volumes:
+     - ./data/postgresdata:/var/lib/postgresql/data
+    environment:
+     - POSTGRES_DB=synapse
+     - POSTGRES_USER=synapse
+     - POSTGRES_PASSWORD=STRONGPASSWORD
+     
+  element:
+    image: vectorim/element-web:latest
+    restart: unless-stopped
+    volumes:
+      - ./element-config.json:/app/config.json
+    ports:
+      - "5000:80"
+
+  synapse:
+    image: matrixdotorg/synapse:latest
+    restart: unless-stopped
+    volumes:
+     - ./data/synapse:/data
+    ports:
+      - "5008:8008"
