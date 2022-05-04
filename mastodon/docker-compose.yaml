@@ -52,7 +52,7 @@ services:
     env_file:
       - ../env.production
       - env.production
-      - env.secrets
+      - ../data/mastodon/env.secrets
     command: bash -c "rm -f /mastodon/tmp/pids/server.pid; bundle exec rails s -p 6001"
     networks:
       - external_network
@@ -75,7 +75,7 @@ services:
     env_file:
       - ../env.production
       - env.production
-      - env.secrets
+      - ../data/mastodon/env.secrets
     command: node ./streaming
     networks:
       - external_network
@@ -95,7 +95,7 @@ services:
     env_file:
       - ../env.production
       - env.production
-      - env.secrets
+      - ../data/mastodon/env.secrets
     command: bundle exec sidekiq
     depends_on:
       - database

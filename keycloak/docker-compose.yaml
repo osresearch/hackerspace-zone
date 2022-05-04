@@ -22,7 +22,7 @@ services:
       env_file:
         - ../env.production
         - env.production
-        - env.secrets
+        - ../data/keycloak/env.secrets
       environment:
         DB_VENDOR: MYSQL
         DB_ADDR: mysql

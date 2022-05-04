@@ -23,4 +23,4 @@ services:
     env_file:
       - ../env.production
       - env.production
-      - env.secrets
+      - ../data/grafana/env.secrets

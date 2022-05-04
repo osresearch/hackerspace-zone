@@ -6,7 +6,7 @@ cd "$DIRNAME"
 
 source ../env.production || die "no top levle env?"
 source env.production || die "no local env?"
-source env.secrets || die "no local secrets?"
+source "../data/keycloak/env.secrets" || die "no local secrets?"
 
 sudo docker-compose exec -T keycloak \
   /opt/keycloak/bin/kcadm.sh \

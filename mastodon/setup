@@ -10,7 +10,9 @@ source ./env.production
 mkdir -p ../data/mastodon/system
 chmod 777 ../data/mastodon/system
 
-if [ -r "./env.secrets" ]; then
+SECRETS="../data/mastodon/env.secrets"
+
+if [ -r "$SECRETS" ]; then
 	docker-compose up -d || die "unable to restart mastodon"
 	exit 0
 fi
@@ -22,7 +24,8 @@ OIDC_CLIENT_SECRET="$(openssl rand -hex 32)"
 
 # create the secrets file,
 # along with some parameters that should be in the environment
-cat <<EOF > env.secrets
+mkdir -p "$(dirname "$SECRETS")"
+cat <<EOF > "$SECRETS"
 # DO NOT CHECK IN
 LOCAL_DOMAIN=$MASTODON_HOSTNAME
 OIDC_DISPLAY_NAME=$REALM
@@ -36,7 +39,7 @@ EOF
 info "mastodon: creating push keys"
 docker-compose run --rm mastodon \
 	rails mastodon:webpush:generate_vapid_key \
-	>> env.secrets \
+	>> "$SECRETS" \
 || die "unable to generate vapid key"
 
 info "mastodon: setting up database"
@@ -44,7 +47,7 @@ docker-compose run --rm mastodon \
 	rails db:setup \
 || die "unable to login"
 
-source ./env.secrets
+source "$SECRETS"
 
 info "mastodon: creating keycloak interface"
 ../keycloak/client-delete mastodon

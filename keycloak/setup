@@ -7,7 +7,9 @@ cd "$DIRNAME"
 source ../env.production
 source ./env.production
 
-if [ -r "./env.secrets" ]; then
+SECRETS="../data/keycloak/env.secrets"
+
+if [ -r "$SECRETS" ]; then
 	docker-compose up -d || die "keycloak: unable to start container"
 	exit 0
 fi
@@ -17,7 +19,8 @@ docker-compose down 2>/dev/null
 KEYCLOAK_ADMIN_PASSWORD="$(openssl rand -hex 8)"
 echo "Keycloak admin password $KEYCLOAK_ADMIN_PASSWORD"
 
-cat <<EOF > env.secrets
+mkdir -p "$(dirname "$SECRETS")"
+cat <<EOF > "$SECRETS"
 # DO NOT CHECK IN
 KEYCLOAK_ADMIN_PASSWORD=$KEYCLOAK_ADMIN_PASSWORD
 EOF

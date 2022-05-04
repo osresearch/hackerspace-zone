@@ -6,7 +6,8 @@ cd "$DIRNAME"
 source ../env.production || die "no top level env?"
 source env.production || die "no local env?"
 
-if [ -r "./env.secrets" ]; then
+SECRETS="../data/nextcloud/env.secrets"
+if [ -r "$SECRETS" ]; then
 	docker-compose up -d || die "nextcloud: unable to start"
 	exit 0
 fi
@@ -17,7 +18,8 @@ NEXTCLOUD_CLIENT_SECRET="$(openssl rand -hex 32)"
 NEXTCLOUD_ADMIN_PASSWORD="$(openssl rand -hex 6)"
 
 echo "Generating secrets: admin password $NEXTCLOUD_ADMIN_PASSWORD"
-cat <<EOF > env.secrets
+mkdir -p "$(dirname "$SECRETS")"
+cat <<EOF > "$SECRETS"
 # Do not check in!
 NEXTCLOUD_ADMIN_PASSWORD=$NEXTCLOUD_ADMIN_PASSWORD
 NEXTCLOUD_TRUSTED_DOMAINS=$NEXTCLOUD_HOSTNAME
