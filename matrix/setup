@@ -6,13 +6,14 @@ cd "$DIRNAME"
 source ../env.production || die "no top levle env?"
 source env.production || die "no local env?"
 
-docker-compose down
-
 HOMESERVER_YAML="data/synapse/homeserver.yaml"
 if [  -r "$HOMESERVER_YAML" ]; then
 	echo "home server already configured? delete data directory to force reconfig"
+	docker-compose up -d || die "matrix: unable to restart"
 	exit 0
 fi
+
+docker-compose down 2>/dev/null
 
 # This will create a *delegated* matrix server,
 # where the "servername" is just the top level domain,
@@ -44,7 +45,7 @@ oidc_providers:
         display_name_template: "{{ user.name }}"
 EOF
 
-../keycloak/client-delete 'synapse' || echo "client did not exist?"
+../keycloak/client-delete 'synapse' 2>/dev/null
 
 ../keycloak/client-create << EOF || die "unable to create client id"
 {
@@ -57,3 +58,5 @@ EOF
 	"secret": "$MATRIX_CLIENT_SECRET"
 }
 EOF
+
+docker-compose up -d || die "matrix: unable to start container"
