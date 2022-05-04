@@ -14,9 +14,9 @@ set -x
 
 # move the temp live directory away if
 # this is the first time we've run anything here
-if [ ! -d "data/certbot/conf/accounts" ]; then
+if [ ! -d "../data/certbot/conf/accounts" ]; then
 	echo "deleting temp keys"
-	rm -rf data/certbot/conf/live
+	rm -rf ../data/certbot/conf/live
 fi
 
 docker-compose run --rm certbot \

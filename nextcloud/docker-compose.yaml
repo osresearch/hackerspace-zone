@@ -8,7 +8,7 @@ services:
       - POSTGRES_PASSWORD=nextcloud
       - POSTGRES_DB=nextcloud
     volumes:
-      - ./data/database:/var/lib/postgresql/data
+      - ../data/nextcloud/database:/var/lib/postgresql/data
     restart: always
 
   nextcloud:
@@ -30,7 +30,7 @@ services:
       # NEXTCLOUD_ADMIN_PASSWORD in env.secrets
       # NEXTCLOUD_TRUSTED_DOMAINS also set in env.secrets
     volumes:
-      - ./data/nextcloud:/var/www/html
+      - ../data/nextcloud/nextcloud:/var/www/html
     depends_on:
       - database
 

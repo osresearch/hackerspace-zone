@@ -11,23 +11,25 @@ if [ -z "${DOMAIN_NAME}" ]; then
 	die "DOMAIN_NAME not set"
 fi
 
-docker-compose down
+certdir="../data/certbot/conf/live/${DOMAIN_NAME}"
 
-certdir="data/certbot/conf/live/${DOMAIN_NAME}"
+if [ -r "$certdir/privkey.pem" ]; then
+	docker-compose up -d || die "nginx: unable to start"
+	exit 0
+fi
+
 mkdir -p "$certdir" || die "$certdir: unable to make"
 
-if [ ! -r "$certdir/privkey.pem" ]; then
-	openssl req \
-		-x509 \
-		-newkey rsa:2048 \
-		-keyout "$certdir/privkey.pem" \
-		-out "$certdir/fullchain.pem" \
-		-sha256 \
-		-nodes \
-		-days 365 \
-		-subj "/CN=${DOMAIN_NAME}'" \
-	|| die "$certdir/privkey.pem: unable to create temp key"
-fi
+openssl req \
+	-x509 \
+	-newkey rsa:2048 \
+	-keyout "$certdir/privkey.pem" \
+	-out "$certdir/fullchain.pem" \
+	-sha256 \
+	-nodes \
+	-days 365 \
+	-subj "/CN=${DOMAIN_NAME}'" \
+|| die "$certdir/privkey.pem: unable to create temp key"
 
 docker-compose up -d || die "unable to bring up nginx"
 
@@ -35,5 +37,3 @@ echo "SLEEPING..."
 sleep 10
 
 ./certbot-renew || die "unable to create certs"
-
-

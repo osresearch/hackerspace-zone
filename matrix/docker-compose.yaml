@@ -4,7 +4,7 @@ services:
     image: postgres:13.4-alpine
     restart: unless-stopped
     volumes:
-     - ./data/postgresdata:/var/lib/postgresql/data
+     - ../data/matrix/postgresdata:/var/lib/postgresql/data
     environment:
      - POSTGRES_DB=synapse
      - POSTGRES_USER=synapse
@@ -22,6 +22,6 @@ services:
     image: matrixdotorg/synapse:latest
     restart: unless-stopped
     volumes:
-     - ./data/synapse:/data
+     - ../data/matrix/synapse:/data
     ports:
       - "5008:8008"

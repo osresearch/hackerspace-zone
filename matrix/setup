@@ -6,9 +6,9 @@ cd "$DIRNAME"
 source ../env.production || die "no top levle env?"
 source env.production || die "no local env?"
 
-HOMESERVER_YAML="data/synapse/homeserver.yaml"
+SYNAPSE_DIR="../data/matrix/synapse"
+HOMESERVER_YAML="$SYNAPSE_DIR/homeserver.yaml"
 if [  -r "$HOMESERVER_YAML" ]; then
-	echo "home server already configured? delete data directory to force reconfig"
 	docker-compose up -d || die "matrix: unable to restart"
 	exit 0
 fi
@@ -21,7 +21,7 @@ docker-compose down 2>/dev/null
 # the syntax here is confusing and it is not clear in
 # the docs *which* have to be updated.
 docker run -it --rm \
-	-v "`pwd`/data/synapse:/data" \
+	-v "`pwd`/$SYNAPSE_DIR:/data" \
 	-e "SYNAPSE_SERVER_NAME=$DOMAIN_NAME" \
 	-e SYNAPSE_REPORT_STATS=yes \
 	matrixdotorg/synapse:latest generate \

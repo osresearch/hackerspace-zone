@@ -8,7 +8,7 @@ services:
   mysql:
       image: mysql:5.7
       volumes:
-        - ./data/database:/var/lib/mysql
+        - ../data/keycloak/database:/var/lib/mysql
       environment:
         MYSQL_ROOT_PASSWORD: root
         MYSQL_DATABASE: keycloak
@@ -33,8 +33,8 @@ services:
         # KEYCLOAK_ADMIN_PASSWORD should be set in env.secrets
         PROXY_ADDRESS_FORWARDING: 'true'
       volumes:
-        - ./data/certs:/etc/x509/https
-        - ./data/keycloak:/opt/keycloak/data
+        - ../data/keycloak/certs:/etc/x509/https
+        - ../data/keycloak/keycloak:/opt/keycloak/data
       ports:
         - 8080:8080
       depends_on:

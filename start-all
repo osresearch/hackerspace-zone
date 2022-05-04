@@ -1,0 +1,13 @@
+#!/bin/bash
+die() { echo >&2 "$@" ; exit 1 ; }
+
+source ./env.production || die "no production env?"
+
+if [ -z "$DOMAIN_NAME" ]; then
+	die "\$DOMAIN_NAME not set; things will break"
+fi
+
+for service in keycloak nginx hedgedoc nextcloud mastodon grafana matrix ; do
+	echo "$service: starting"
+	./$service/setup || die "$server: failed to start"
+done

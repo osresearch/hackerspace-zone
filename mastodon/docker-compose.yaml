@@ -9,7 +9,7 @@ services:
     healthcheck:
       test: ['CMD', 'pg_isready', '-U', "mastodon", "-d", "mastodon_production"]
     volumes:
-      - ./data/database:/var/lib/postgresql/data
+      - ../data/mastodon/database:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=mastodon
       - POSTGRES_PASSWORD=mastodon
@@ -23,7 +23,7 @@ services:
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
     volumes:
-      - ./data/redis:/data
+      - ../data/mastodon/redis:/data
 
   es:
     restart: always
@@ -38,7 +38,7 @@ services:
     healthcheck:
        test: ["CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health || exit 1"]
     volumes:
-       - ./data/elasticsearch:/usr/share/elasticsearch/data
+       - ../data/mastodon/elasticsearch:/usr/share/elasticsearch/data
     # fixup the permissions on the data directory since they are created as root on host
     entrypoint: /bin/sh -c "chown -R elasticsearch:elasticsearch data && /usr/local/bin/docker-entrypoint.sh eswrapper"
     ulimits:
@@ -67,7 +67,7 @@ services:
       - redis
       - es
     volumes:
-      - ./data/system:/mastodon/public/system
+      - ../data/mastodon/system:/mastodon/public/system
 
   streaming:
     image: tootsuite/mastodon
@@ -104,7 +104,7 @@ services:
       - external_network
       - internal_network
     volumes:
-      - ./data/system:/mastodon/public/system
+      - ../data/mastodon/system:/mastodon/public/system
     healthcheck:
       test: ['CMD-SHELL', "ps aux | grep '[s]idekiq\ 6' || false"]
 

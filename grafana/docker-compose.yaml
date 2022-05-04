@@ -16,7 +16,7 @@ services:
       # GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET is in env.secrets
       # auth URLs are in the env.secrets since they have hostname expansion
     volumes:
-      - ./data/grafana:/var/lib/grafana
+      - ../data/grafana:/var/lib/grafana
     restart: unless-stopped
     ports:
       - 8000:3000

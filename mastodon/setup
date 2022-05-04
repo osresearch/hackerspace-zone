@@ -7,8 +7,8 @@ cd "$DIRNAME"
 source ../env.production
 source ./env.production
 
-mkdir -p data/system
-chmod 777 data/system
+mkdir -p ../data/mastodon/system
+chmod 777 ../data/mastodon/system
 
 if [ -r "./env.secrets" ]; then
 	docker-compose up -d || die "unable to restart mastodon"
