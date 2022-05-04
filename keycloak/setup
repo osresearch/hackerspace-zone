@@ -6,10 +6,29 @@ DIRNAME="$(dirname $0)"
 cd "$DIRNAME"
 source ../env.production
 source ./env.production
-source ./env.secrets
+
+if [ -r "./env.secrets" ]; then
+	docker-compose up -d || die "keycloak: unable to start container"
+	exit 0
+fi
+
+docker-compose down 2>/dev/null
+
+KEYCLOAK_ADMIN_PASSWORD="$(openssl rand -hex 8)"
+echo "Keycloak admin password $KEYCLOAK_ADMIN_PASSWORD"
+
+cat <<EOF > env.secrets
+# DO NOT CHECK IN
+KEYCLOAK_ADMIN_PASSWORD=$KEYCLOAK_ADMIN_PASSWORD
+EOF
+
+docker-compose up -d || die "unable to start keycloak"
+echo "sleeping a minute while keycloak initializes..." 
+sleep 30
+
 
 info "logging into server"
-sudo docker-compose exec keycloak \
+docker-compose exec keycloak \
   /opt/keycloak/bin/kcadm.sh \
   config credentials \
   --server http://localhost:8080/ \
@@ -20,7 +39,7 @@ sudo docker-compose exec keycloak \
 
 
 info "Create a new realm for '$REALM'"
-sudo docker-compose exec keycloak \
+docker-compose exec keycloak \
   /opt/keycloak/bin/kcadm.sh \
   create realms \
   -s "realm=$REALM" \
@@ -30,7 +49,7 @@ sudo docker-compose exec keycloak \
 
 # https://github.com/hedgedoc/hedgedoc/issues/56
 info "Fix up a id bug"
-sudo docker-compose exec -T keycloak \
+docker-compose exec -T keycloak \
   /opt/keycloak/bin/kcadm.sh \
   create client-scopes \
   -r "$REALM" \
@@ -62,7 +81,7 @@ EOF
 
 
 info "Create an admin user in realm"
-sudo docker-compose exec -T keycloak \
+docker-compose exec -T keycloak \
   /opt/keycloak/bin/kcadm.sh \
   create users \
   -o \

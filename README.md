@@ -1,32 +1,22 @@
+# hackerspace.zone
+
+Infrastructure for the self-hosted, single-sign-on, community-run services.
+
+* Set the domain name in `env.production`
+* Create the DNS entries in the domain for `login`, `cloud`, `matrix`, `dashboard`, `docs` and maybe more.
+* Install dependencies:
+
+```
 apt install jq docker-compose
-
-```
-cd keycloak
-sudo docker-compose up -d
-sleep 30
-./setup
 ```
 
-```
-cd ../nginx
-./setup
-sudo docker-compose up -d
-```
+* Setup each of the services. `keycloak` and `nginx` are required to start the others:
 
 ```
-cd ../hedgedoc
-./setup
-sudo docker-compose up -d
-```
-
-```
-cd ../nextcloud
-sudo docker-compose up -d
-./setup
-```
-
-```
-cd ../mastodon
-./setup
-sudo docker-compose up
+./keycloak/setup
+./nginx/setup
+./hedgedoc/setup
+./nextcloud/setup
+./mastodon/setup
+./grafana/setup
 ```

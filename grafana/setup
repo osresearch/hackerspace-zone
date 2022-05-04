@@ -8,12 +8,18 @@ source env.production || die "no local env?"
 
 BASE="https://$KEYCLOAK_HOSTNAME/realms/$REALM/protocol/openid-connect"
 
-if [ ! -r "env.secrets" ]; then
-	GRAFANA_CLIENT_SECRET="$(openssl rand -hex 32)"
-	GRAFANA_ADMIN_PASSWORD="$(openssl rand -hex 4)"
+if [ -r "env.secrets" ]; then
+	docker-compose up -d || die "grafana: unable to start container"
+	exit 0
+fi
 
-	echo "Generating secrets: admin password $GRAFANA_ADMIN_PASSWORD"
-	cat <<EOF > env.secrets
+docker-compose down 2>/dev/null
+
+GRAFANA_CLIENT_SECRET="$(openssl rand -hex 32)"
+GRAFANA_ADMIN_PASSWORD="$(openssl rand -hex 4)"
+
+echo "Generating secrets: admin password $GRAFANA_ADMIN_PASSWORD"
+cat <<EOF > env.secrets
 # Do not check in!
 GF_SECURITY_ADMIN_PASSWORD=$GRAFANA_ADMIN_PASSWORD
 GF_SERVER_ROOT_URL=https://$GRAFANA_HOSTNAME/
@@ -23,13 +29,9 @@ GF_AUTH_GENERIC_OAUTH_TOKEN_URL=$BASE/token
 GF_AUTH_GENERIC_OAUTH_API_URL=$BASE/userinfo
 GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET=$GRAFANA_CLIENT_SECRET
 EOF
-else
-	source env.secrets || die "no secret env?"
-fi
 
-docker-compose down
 
-../keycloak/client-delete 'grafana' || echo "client did not exist?"
+../keycloak/client-delete 'grafana' 2>/dev/null
 
 ../keycloak/client-create << EOF || die "unable to create client id"
 {
@@ -43,4 +45,4 @@ docker-compose down
 }
 EOF
 
-docker-compose up -d || die "unable to bring up grafana"
+docker-compose up -d || die "grafana: unable to bring up container"

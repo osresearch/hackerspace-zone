@@ -6,20 +6,23 @@ cd "$DIRNAME"
 source ../env.production || die "no top level env?"
 source env.production || die "no local env?"
 
-if [ ! -r "env.secrets" ]; then
-	NEXTCLOUD_CLIENT_SECRET="$(openssl rand -hex 32)"
-	NEXTCLOUD_ADMIN_PASSWORD="$(openssl rand -hex 4)"
+if [ -r "./env.secrets" ]; then
+	docker-compose up -d || die "nextcloud: unable to start"
+	exit 0
+fi
 
-	echo "Generating secrets: admin password $NEXTCLOUD_ADMIN_PASSWORD"
-	cat <<EOF > env.secrets
+docker-compose down 2>/dev/null
+
+NEXTCLOUD_CLIENT_SECRET="$(openssl rand -hex 32)"
+NEXTCLOUD_ADMIN_PASSWORD="$(openssl rand -hex 6)"
+
+echo "Generating secrets: admin password $NEXTCLOUD_ADMIN_PASSWORD"
+cat <<EOF > env.secrets
 # Do not check in!
 NEXTCLOUD_ADMIN_PASSWORD=$NEXTCLOUD_ADMIN_PASSWORD
 NEXTCLOUD_TRUSTED_DOMAINS=$NEXTCLOUD_HOSTNAME
 NEXTCLOUD_CLIENT_SECRET=$NEXTCLOUD_CLIENT_SECRET
 EOF
-else
-	source env.secrets || die "no secret env?"
-fi
 
 BASE="https://$KEYCLOAK_HOSTNAME/realms/$REALM/protocol/openid-connect"
 PROVIDER="$(jq -c . <<EOF
@@ -50,14 +53,13 @@ docker-compose up -d || die "unable to bring up docker"
 
 # wait for the nextcloud instance to be responsive
 # TODO: how to find out if it is ready?
-echo "SLEEPING..."
-sleep 30
-
+echo "Sleeping a minute while nextcloud installs"
+sleep 60
 
 
 docker-compose exec -u www-data -T nextcloud bash -x <<EOF || die "unable to configure sociallogin"
-./occ app:remove sociallogin || echo "not yet installed"
-./occ app:install sociallogin || exit 1
+./occ app:install calendar
+./occ app:install sociallogin
 ./occ config:app:set sociallogin prevent_create_email_exists --value=1 || exit 1
 ./occ config:app:set sociallogin update_profile_on_login --value=1 || exit 1
 ./occ config:app:set sociallogin custom_providers --value='$PROVIDER' || exit 1

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+for file in */docker-compose.yaml ; do
+	dir="$(dirname "$file")"
+	echo "$dir"
+	( cd "$dir" ; docker-compose down )
+done

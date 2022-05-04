@@ -1,16 +1,4 @@
-This needs setup run *first* and then `docker-compose up`
+# Mastodon
 
----
-
-
-Notes from https://gist.github.com/TrillCyborg/84939cd4013ace9960031b803a0590c4
-
-elastic search needs hacks to set permissions on data directory
-
-there's an interactive setup stage?
-
-need to preconfigure with hostname, email, etc
-
-VAPID key stuff?
-
-rails db:setup
+This is the vanilla version with Elastic Search and Single-Sign-On enabled.
+No other user accounts are allowed to join.

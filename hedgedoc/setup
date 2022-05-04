@@ -6,14 +6,19 @@ cd "$DIRNAME"
 source ../env.production || die "no top levle env?"
 source env.production || die "no local env?"
 
-docker-compose down
+if [ -r "./env.secrets" ]; then
+	docker-compose up -d || die "hedgedoc: unable to start"
+	exit 0
+fi
+
+docker-compose down 2>/dev/null
 
 # regenerate the client secrets
 CLIENT_SECRET="$(openssl rand -hex 20)"
 SESSION_SECRET="$(openssl rand -hex 20)"
 
-rm -f env.secrets
 cat <<EOF > env.secrets
+# DO NOT CHECK IN
 CMD_OAUTH2_CLIENT_SECRET=$CLIENT_SECRET
 CMD_SESSION_SECRET=$SESSION_SECRET
 EOF
@@ -46,5 +51,4 @@ EOF
 }
 EOF
 
-
-docker-compose up -d || die "unable to start container"
+docker-compose up -d || die "hedgedoc: unable to start container"

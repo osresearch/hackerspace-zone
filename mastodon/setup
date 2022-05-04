@@ -10,27 +10,17 @@ source ./env.production
 mkdir -p data/system
 chmod 777 data/system
 
-rm -f env.secrets
-cat > env.secrets << EOF
-# Fake file to make db:setup happy
-SECRET_KEY_BASE=000000
-OTP_SECRET=000000
-OIDC_CLIENT_SECRET=000000
-EOF
+if [ -r "./env.secrets" ]; then
+	docker-compose up -d || die "unable to restart mastodon"
+	exit 0
+fi
 
 # have to bring it all down before we touch the files
 docker-compose down
 
-if [ -z "$MASTODON_SKIP_DB_INIT" ]; then
-	info "configuring mastodon"
-	sudo docker-compose run --rm mastodon \
-	  rails db:setup \
-	|| die "unable to login"
-fi
-
 OIDC_CLIENT_SECRET="$(openssl rand -hex 32)"
 
-# now create the real secrets file,
+# create the secrets file,
 # along with some parameters that should be in the environment
 cat <<EOF > env.secrets
 # DO NOT CHECK IN
@@ -43,12 +33,20 @@ SECRET_KEY_BASE=$(openssl rand -hex 32)
 OTP_SECRET=$(openssl rand -hex 32)
 EOF
 
+info "mastodon: creating push keys"
 docker-compose run --rm mastodon \
-  rails mastodon:webpush:generate_vapid_key \
-  >> env.secrets \
+	rails mastodon:webpush:generate_vapid_key \
+	>> env.secrets \
 || die "unable to generate vapid key"
 
+info "mastodon: setting up database"
+docker-compose run --rm mastodon \
+	rails db:setup \
+|| die "unable to login"
 
+source ./env.secrets
+
+info "mastodon: creating keycloak interface"
 ../keycloak/client-delete mastodon
 ../keycloak/client-create <<EOF || die "Unable to create keycloak client"
 {
@@ -62,4 +60,4 @@ docker-compose run --rm mastodon \
 }
 EOF
 
-docker-compose up -d
+docker-compose up -d || die "mastodon: unable to start container"

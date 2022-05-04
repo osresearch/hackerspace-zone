@@ -27,7 +27,6 @@ docker run -it --rm \
 || die "unable to generate synapse config"
 
 MATRIX_CLIENT_SECRET="$(openssl rand -hex 20)"
-#MATRIX_CLIENT_SECRET="abcdef1234"
 
 cat <<EOF >> "$HOMESERVER_YAML"
 web_client_location: https://${MATRIX_HOSTNAME}/
