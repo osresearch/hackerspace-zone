@@ -6,7 +6,8 @@ cd "$DIRNAME"
 source ../env.production || die "no top levle env?"
 source env.production || die "no local env?"
 
-SYNAPSE_DIR="../data/matrix/synapse"
+DATA="../data/matrix"
+SYNAPSE_DIR="$DATA/synapse"
 HOMESERVER_YAML="$SYNAPSE_DIR/homeserver.yaml"
 if [  -r "$HOMESERVER_YAML" ]; then
 	docker-compose up -d || die "matrix: unable to restart"
@@ -14,17 +15,24 @@ if [  -r "$HOMESERVER_YAML" ]; then
 fi
 
 docker-compose down 2>/dev/null
+mkdir -p "$DATA"
+
+# fix up the Element client config to have the correct hostname
+# based on the environment variables
+export DOMAIN_NAME MATRIX_HOSTNAME
+envsubst < "element-config.json.template" > "$DATA/element-config.json"
+
 
 # This will create a *delegated* matrix server,
 # where the "servername" is just the top level domain,
 # but it is hosted on "matrix.DOMAIN_NAME".
 # the syntax here is confusing and it is not clear in
 # the docs *which* have to be updated.
-docker run -it --rm \
-	-v "`pwd`/$SYNAPSE_DIR:/data" \
-	-e "SYNAPSE_SERVER_NAME=$DOMAIN_NAME" \
-	-e SYNAPSE_REPORT_STATS=yes \
-	matrixdotorg/synapse:latest generate \
+docker-compose run \
+	--rm \
+	-e SYNAPSE_SERVER_NAME="$DOMAIN_NAME" \
+	-e SYNAPSE_REPORT_STATS="no" \
+	synapse generate \
 || die "unable to generate synapse config"
 
 MATRIX_CLIENT_SECRET="$(openssl rand -hex 20)"

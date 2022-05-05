@@ -14,7 +14,7 @@ services:
     image: vectorim/element-web:latest
     restart: unless-stopped
     volumes:
-      - ./element-config.json:/app/config.json
+      - ../data/matrix/element-config.json:/app/config.json
     ports:
       - "5000:80"
 
