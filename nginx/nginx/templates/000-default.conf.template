@@ -30,8 +30,14 @@ server {
 		root /var/www;
 	}
 
+	# delegated Matrix server
 	location /.well-known/matrix {
 		proxy_pass https://${MATRIX_HOSTNAME};
+	}
+
+	# separate Mastodon WEB_DOMAIN and LOCAL_DOMAIN
+	location = /.well-known/host-meta {
+		return 301 https://${MASTODON_HOSTNAME}$request_uri;
 	}
 
 	listen 443 ssl default_server;
