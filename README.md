@@ -15,8 +15,5 @@ apt install jq docker-compose
 ```
 ./keycloak/setup
 ./nginx/setup
-./hedgedoc/setup
-./nextcloud/setup
-./mastodon/setup
-./grafana/setup
+./start-all
 ```
