@@ -22,15 +22,7 @@ services:
       - CMD_ALLOW_ANONYMOUS=false  # anonymous user's can't create notes
       - CMD_ALLOW_ANONYMOUS_EDITS=true # but they can be invited to edit notes
       - CMD_EMAIL=false # only oauth logins
-      - CMD_DOMAIN=docs.hackerspace.zone
-      - CMD_OAUTH2_AUTHORIZATION_URL=https://login.hackerspace.zone/realms/hackerspace/protocol/openid-connect/auth
-      - CMD_OAUTH2_TOKEN_URL=https://login.hackerspace.zone/realms/hackerspace/protocol/openid-connect/token
-      - CMD_OAUTH2_USER_PROFILE_URL=https://login.hackerspace.zone/realms/hackerspace/protocol/openid-connect/userinfo
-      - CMD_OAUTH2_USER_PROFILE_USERNAME_ATTR=preferred_username
-      - CMD_OAUTH2_USER_PROFILE_DISPLAY_NAME_ATTR=name
-      - CMD_OAUTH2_USER_PROFILE_EMAIL_ATTR=email
-      - CMD_OAUTH2_CLIENT_ID=hedgedoc
-      - CMD_OAUTH2_PROVIDERNAME=Keycloak
+      # DOMAIN and OAUTH2 variables are now in env.secret
     volumes:
       - ../data/hedgedoc/uploads:/hedgedoc/public/uploads
     ports:
