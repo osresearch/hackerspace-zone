@@ -1,0 +1,54 @@
+#!/bin/bash
+set -euo pipefail
+die() { echo >&2 "$@" ; exit 1 ; }
+
+DIRNAME="$(dirname $0)"
+cd "$DIRNAME"
+
+docker-compose down
+
+../keycloak/client-delete gitea
+
+GITEA_CLIENT_SECRET="$(openssl rand -hex 32)"
+
+rm -f env.secrets
+cat <<EOF > env.secrets
+# DO NOT CHECK IN
+#GITEA_CLIENT_SECRET=$GITEA_CLIENT_SECRET
+EOF
+
+../keycloak/client-create <<EOF || die "unable to create gitea client"
+{
+	"clientId": "gitea",
+	"rootUrl": "https://$GITEA_HOSTNAME",
+	"adminUrl": "https://$GITEA_HOSTNAME",
+	"redirectUris": [ "https://$GITEA_HOSTNAME/*" ],
+	"webOrigins": [ "https://$GITEA_HOSTNAME" ]
+  "clientAuthenticatorType": "client-secret",
+  "secret": "$GITEA_CLIENT_SECRET"
+}
+EOF
+
+docker-compose up -d || die "unable to start container"
+
+echo SLEEPING
+sleep 30
+
+test -f ./data/app.ini || die "missing data/app.ini"
+
+grep --quiet '\[openid\]' ./data/app.ini || {
+  echo <<EOF >>./data/app.ini || die "unable to enable OpenID in app.ini"
+;service]
+; Only allow registering via OpenID
+;DISABLE_REGISTRATION = false
+;ALLOW_ONLY_EXTERNAL_REGISTRATION = true
+[openid]
+; do not allow signin to local users via OpenID
+ENABLE_OPENID_SIGNIN = false
+; allow creation of new users via OpenID
+ENABLE_OPENID_SIGNUP = true
+EOF
+}
+
+echo "TODO: Configure openID by visiting login.${DOMAIN_NAME}/
+

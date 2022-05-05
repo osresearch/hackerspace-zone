@@ -1,0 +1,26 @@
+version: "3"
+
+networks:
+  gitea:
+    external: false
+
+services:
+  gitea:
+    image: gitea/gitea:1.16.6
+    env_file:
+      - ../env.production
+      - env.production
+      - env.secrets
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+    networks:
+      - gitea
+    volumes:
+      - ./data/gitea:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "3030:3000"
+      - "222:22"
+    restart: always
