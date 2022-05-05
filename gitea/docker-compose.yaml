@@ -10,14 +10,14 @@ services:
     env_file:
       - ../env.production
       - env.production
-      - env.secrets
+      - ../data/gitea/env.secrets
     environment:
       - USER_UID=1000
       - USER_GID=1000
     networks:
       - gitea
     volumes:
-      - ./data/gitea:/data
+      - ../data/gitea:/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     ports:

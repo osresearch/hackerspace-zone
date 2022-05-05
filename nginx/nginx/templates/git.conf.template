@@ -1,8 +1,3 @@
-map $http_upgrade $connection_upgrade {
-        default upgrade;
-        ''      close;
-}
-
 server {
 	server_name ${GITEA_HOSTNAME};
 	client_max_body_size 128m;
@@ -27,9 +22,9 @@ server {
 	}
 
   # login with OIDC
-  location /user/login {
-    return 302 https://login.hackerspace.zone/;
-  }
+#  location /user/login {
+#    return 302 https://login.hackerspace.zone/;
+#  }
 
 	listen 443 ssl;
 	ssl_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
