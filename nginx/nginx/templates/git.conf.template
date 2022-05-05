@@ -21,10 +21,10 @@ server {
 		proxy_set_header X-Forwarded-Proto $scheme;
 	}
 
-  # login with OIDC
-#  location /user/login {
-#    return 302 https://login.hackerspace.zone/;
-#  }
+  # force login with OIDC
+  location /user/login {
+    return 302 https://${GITEA_HOSTNAME}/user/oauth2/keycloak;
+  }
 
 	listen 443 ssl;
 	ssl_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;

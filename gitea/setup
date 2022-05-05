@@ -26,6 +26,7 @@ mkdir -p "$DATA"
 cat <<EOF > "$SECRETS"
 # DO NOT CHECK IN
 GITEA_CLIENT_SECRET=$GITEA_CLIENT_SECRET
+GITEA__server__ROOT_URL=https://$GITEA_HOSTNAME/
 EOF
 
 
@@ -44,28 +45,4 @@ docker-compose down 2>/dev/null
 }
 EOF
 
-docker-compose up -d || die "unable to start container"
-
-echo SLEEPING
-sleep 10
-
-test -f "$INI" || die "missing $INI"
-
-info "enabling OpenID in $INI"
-grep --quiet '\[openid\]' "$INI" || {
-  echo <<EOF >> "$INI" || die "unable to enable OpenID in $INI"
-;service]
-; Only allow registering via OpenID
-;DISABLE_REGISTRATION = false
-;ALLOW_ONLY_EXTERNAL_REGISTRATION = true
-[openid]
-; do not allow signin to local users via OpenID
-ENABLE_OPENID_SIGNIN = false
-; allow creation of new users via OpenID
-ENABLE_OPENID_SIGNUP = true
-EOF
-}
-
-info "restarting"
-docker-compose down
 docker-compose up -d || die "unable to start container"
