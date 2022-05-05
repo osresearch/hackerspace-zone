@@ -17,6 +17,8 @@ SERVICES+=\ nextcloud
 SERVICES+=\ mastodon
 SERVICES+=\ grafana
 SERVICES+=\ matrix
+SERVICES+=\ gitea
+SERVICES+=\ mobilizon
 
 HOSTS+=\ $KEYCLOAK_HOST
 HOSTS+=\ $HEDGEDOC_HOST
@@ -24,6 +26,8 @@ HOSTS+=\ $NEXTCLOUD_HOST
 HOSTS+=\ $MASTODON_HOST
 HOSTS+=\ $GRAFANA_HOST
 HOSTS+=\ $MATRIX_HOST
+HOSTS+=\ $GITEA_HOST
+HOSTS+=\ $MOBILIZON_HOST
 
 for host in $HOSTS ; do
 	host $host > /dev/null || die "$host: DNS entry not present?"
