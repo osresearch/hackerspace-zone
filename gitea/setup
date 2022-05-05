@@ -17,6 +17,7 @@ if [ -r "$SECRETS" ]; then
 	exit 0
 fi
 
+./add-ssh-user || die "unable to add ssh user"
 
 GITEA_CLIENT_SECRET="$(openssl rand -hex 32)"
 GITEA_ADMIN_PASSWORD="$(openssl rand -hex 8)"
@@ -29,6 +30,7 @@ cat <<EOF > "$SECRETS"
 GITEA_CLIENT_SECRET=$GITEA_CLIENT_SECRET
 GITEA_ADMIN_PASSWORD=$GITEA_ADMIN_PASSWORD
 GITEA__server__ROOT_URL=https://$GITEA_HOSTNAME/
+GITEA__server__SSH_DOMAIN=$GITEA_HOSTNAME
 GITEA__security__INSTALL_LOCK=true
 GITEA__security__SECRET_KEY=$(openssl rand -hex 32)
 EOF

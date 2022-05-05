@@ -12,8 +12,8 @@ services:
       - env.production
       - ../data/gitea/env.secrets
     environment:
-      - USER_UID=1000
-      - USER_GID=1000
+      - USER_UID=2222 # must match git user on host system
+      - USER_GID=2222
       - GITEA__database__DB_TYPE=postgres
       - GITEA__database__HOST=db:5432
       - GITEA__database__NAME=gitea
@@ -25,9 +25,10 @@ services:
       - ../data/gitea:/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+      - /home/git/.ssh/:/data/git/.ssh
     ports:
       - "3030:3000"
-      - "222:22"
+      - "2222:22"
     restart: always
     depends_on:
       - db
