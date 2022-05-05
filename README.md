@@ -17,3 +17,5 @@ apt install jq docker-compose
 ./nginx/setup
 ./start-all
 ```
+
+* gitea requires some manual configuration; see [gitea/README][gitea/README.md] for more info

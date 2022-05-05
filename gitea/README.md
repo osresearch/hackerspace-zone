@@ -1,9 +1,9 @@
 # gitea
 
-OpenID setup doesn't work out of the box.  The open id provider must be configured:
+After the `setup` script has run, the website *still* requires a click to finish the installation.
+Once that is done it will break since the OpenID login has not yet been configured.  Run this to
+fix it.
 
-* Authentication name: `keycloak`
-* OAuth2 Provider: `OpenID Connect`
-* Client key: `gitea`
-* Client secret: (copy from `../data/gitea/env.secrets`)
-* Discovery URL: https://login.hackerspace.zone/realms/hackerspace/.well-known/openid-configuration
+```
+./add-auth
+```
