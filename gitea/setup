@@ -29,6 +29,8 @@ cat <<EOF > "$SECRETS"
 GITEA_CLIENT_SECRET=$GITEA_CLIENT_SECRET
 GITEA_ADMIN_PASSWORD=$GITEA_ADMIN_PASSWORD
 GITEA__server__ROOT_URL=https://$GITEA_HOSTNAME/
+GITEA__security__INSTALL_LOCK=true
+GITEA__security__SECRET_KEY=$(openssl rand -hex 32)
 EOF
 
 
@@ -51,46 +53,6 @@ docker-compose up -d || die "unable to start container"
 
 info "waiting for startup..."
 sleep 5
-
-info "attempting to finish install"
-curl "https://${GITEA_HOSTNAME}/" \
-	-X POST \
-	-f "db_type=postgres" \
-	-f "db_host=db:5432" \
-	-f "db_user=gitea" \
-	-f "db_passwd=gitea" \
-	-f "db_name=gitea" \
-	-f "ssl_mode=disable" \
-	-f "db_schema=" \
-	-f "charset=utf8" \
-	-f "db_path=/data/gitea/gitea.db" \
-	-f "app_name=${REALM} Gitea" \
-	-f "repo_root_path=/data/git/repositories" \
-	-f "lfs_root_path=/data/git/lfs" \
-	-f "run_user=git" \
-	-f "domain=${GITEA_HOSTNAME}" \
-	-f "ssh_port=22" \
-	-f "http_port=3000" \
-	-f "app_url=https://${GITEA_HOSTNAME}/" \
-	-f "log_root_path=/data/gitea/log" \
-	-f "smtp_host=" \
-	-f "smtp_from=" \
-	-f "smtp_user=" \
-	-f "smtp_passwd=" \
-	-f "enable_federated_avatar=on" \
-	-f "enable_open_id_sign_in=on" \
-	-f "allow_only_external_registration=on" \
-	-f "default_allow_create_organization=on" \
-	-f "default_enable_timetracking=on" \
-	-f "no_reply_address=noreply.${GITEA_HOSTNAME}" \
-	-f "password_algorithm=pbkdf2" \
-	-f "admin_name=root" \
-	-f "admin_passwd=${GITEA_ADMIN_PASSWORD}" \
-	-f "admin_confirm_passwd=${GITEA_ADMIN_PASSWORD}" \
-	-f "admin_email=" \
-|| die "unable to initiate install"
-
-sleep 10
 
 info "adding oauth login"
 docker-compose exec -u git gitea \
