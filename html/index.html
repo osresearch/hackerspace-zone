@@ -16,3 +16,28 @@ An easy to install set of self-hosted, single-sign-on, open-source services.
 Source code for building the environments and configuring them:
 <a href="https://github.com/osresearch/hackerspace-zone"><tt>github.com/osresearch/hackerspace-zone</tt></a>
 There is <a href="https://github.com/osresearch/hackerspace-zone/issues/1">probably a better way to do this</a>.
+
+<hr>
+
+<h2>Useful links</h2>
+<ul>
+<li> <a href="https://login.hackerspace.zone/realms/hackerspace/login/">keycloak user account</a>
+<li> <a href="https://login.hackerspace.zone/admin/hackerspace/console/">keycloak realm management</a>
+<li> <a href="https://social.hackerspace.zone/admin/dashboard">mastodon admin dashboard</a>
+<li> <a href="https://social.hackerspace.zone/admin/reports">mastodon moderation dashboard</a>
+</ul>
+
+<h2>Notes</h2>
+* Mastodon doesn't set roles via SSO ([issue 18335](https://github.com/mastodon/mastodon/issues/18335)). To make a user admin from the command line as <tt>root</tt> requires the username:
+<pre>
+cd mastodon
+docker-compose exec -T mastodon \
+  bin/tootctl accounts modify USERNAME --role admin
+</pre>
+
+* Mobilizon doesn't set roles via SSO ([issue 1105](https://framagit.org/framasoft/mobilizon/-/issues/1105), on roadmap for 2.2). To make a user admin from the command line as <tt>root</tt> requires the registered email address:
+<pre>
+cd mobilizon
+docker-compose exec -T mobilizon \
+  bin/mobilizon_ctl users.modify EMAIL --admin
+</pre>
