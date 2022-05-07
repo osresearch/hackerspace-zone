@@ -1,9 +1,11 @@
 #!/bin/bash
-die() { echo >&2 "$@" ; exit 1 ; }
+die() { echo >&2 "matrix: ERROR $@" ; exit 1 ; }
+info() { echo >&2 "matrix: $@" ; }
 
 DIRNAME="$(dirname $0)"
 cd "$DIRNAME"
 source ../env.production || die "no top levle env?"
+source ../env.smtp 2>/dev/null 
 source env.production || die "no local env?"
 
 DATA="../data/matrix"
@@ -53,6 +55,21 @@ oidc_providers:
         display_name_template: "{{ user.name }}"
 EOF
 
+if [ -n "$SMTP_SERVER" ]; then
+	info "configuring email"
+	cat <<EOF >> "$HOMESERVER_YAML"
+email:
+  smtp_host: ${SMTP_SERVER}
+  smtp_port: ${SMTP_PORT}
+  smtp_user: "${SMTP_USER}"
+  smtp_pass: "${SMTP_PASSWORD}"
+  require_transport_security: true
+  notif_from: "%(app)s matrix homeserver <noreply@${DOMAIN_NAME}>"
+  app_name: ${DOMAIN_NAME}
+EOF
+fi
+
+
 ../keycloak/client-delete 'synapse' 2>/dev/null
 
 ../keycloak/client-create << EOF || die "unable to create client id"
@@ -66,5 +83,6 @@ EOF
 	"secret": "$MATRIX_CLIENT_SECRET"
 }
 EOF
+
 
 docker-compose up -d || die "matrix: unable to start container"

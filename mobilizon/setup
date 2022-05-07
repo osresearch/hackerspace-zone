@@ -5,6 +5,7 @@ DIRNAME="$(dirname $0)"
 cd "$DIRNAME"
 source ../env.production || die "no top level env?"
 source env.production || die "no local env?"
+source ../env.smtp 2>/dev/null
 
 DATA="../data/mobilizon"
 SECRETS="$DATA/env.secrets"
@@ -30,6 +31,17 @@ MOBILIZON_INSTANCE_SECRET_KEY_BASE=$(openssl rand -hex 20)
 MOBILIZON_INSTANCE_SECRET_KEY=$(openssl rand -hex 20)
 MOBILIZON_CLIENT_SECRET=${CLIENT_SECRET}
 EOF
+
+if [ -n "$SMTP_SERVER" ]; then
+	cat <<EOF >> "$SECRETS"
+MOBILIZON_INSTANCE_EMAIL=events@${DOMAIN_NAME}
+MOBILIZON_REPLY_EMAIL=noreply@${DOMAIN_NAME}
+MOBILIZON_SMTP_SERVER=${SMTP_SERVER}
+MOBILIZON_SMTP_PORT=${SMTP_PORT}
+MOBILIZON_SMTP_USERNAME=${SMTP_USER}
+MOBILIZON_SMTP_PASSWORD=${SMTP_PASSWORD}
+EOF
+fi
 
 ../keycloak/client-delete mobilizon
 

@@ -6,6 +6,7 @@ DIRNAME="$(dirname $0)"
 cd "$DIRNAME"
 source ../env.production
 source ./env.production
+source "../env.smtp" 2>/dev/null
 
 mkdir -p ../data/mastodon/system
 chmod 777 ../data/mastodon/system
@@ -36,6 +37,16 @@ OIDC_CLIENT_SECRET=$OIDC_CLIENT_SECRET
 SECRET_KEY_BASE=$(openssl rand -hex 32)
 OTP_SECRET=$(openssl rand -hex 32)
 EOF
+
+if [ -n "$SMTP_SERVER" ]; then
+	cat <<EOF >> "$SECRETS"
+SMTP_SERVER=$SMTP_SERVER
+SMTP_PORT=$SMTP_PORT
+SMTP_LOGIN=$SMTP_USER
+SMTP_PASSWORD=$SMTP_PASSWORD
+SMTP_FROM_ADDRESS=mastodon@$DOMAIN_NAME
+EOF
+fi
 
 info "mastodon: creating push keys"
 docker-compose run --rm mastodon \

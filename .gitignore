@@ -1,3 +1,4 @@
 .*.swp
 data
 *.secrets
+env.smtp

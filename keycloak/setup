@@ -1,11 +1,12 @@
 #!/bin/bash
-die() { echo >&2 "ERROR: $@" ; exit 1 ; }
-info() { echo >&2 "$@" ; }
+die() { echo >&2 "keycloak: ERROR: $@" ; exit 1 ; }
+info() { echo >&2 "keycloak: $@" ; }
 
 DIRNAME="$(dirname $0)"
 cd "$DIRNAME"
 source ../env.production
 source ./env.production
+source "../env.smtp" 2>/dev/null
 
 SECRETS="../data/keycloak/env.secrets"
 
@@ -81,6 +82,28 @@ docker-compose exec -T keycloak \
       ]
 }
 EOF
+
+if [ -n "$SMTP_SERVER" ]; then
+	info "configuring email"
+	docker-compose exec -T keycloak \
+	  /opt/keycloak/bin/kcadm.sh update "realms/$REALM" \
+	-f - <<EOF || die "unable to configure email"
+{
+  "resetPasswordAllowed": "true",
+  "smtpServer" : {
+    "auth" : "true",
+    "starttls" : "true",
+    "user" : "$SMTP_USER",
+    "password" : "$SMTP_PASSWORD",
+    "port" : "$SMTP_PORT",
+    "host" : "$SMTP_SERVER",
+    "from" : "keycloak@$DOMAIN_NAME",
+    "fromDisplayName" : "Keycloak @ $DOMAIN_NAME",
+    "ssl" : "false"
+  }
+}
+EOF
+fi
 
 
 info "Create an admin user in realm"
