@@ -26,10 +26,6 @@ server {
 	# required to avoid HTTP 411: see Issue #1486 (https://github.com/dotcloud/docker/issues/1486)
 	chunked_transfer_encoding on;
 
-	location / {
-		root /var/www;
-	}
-
 	# delegated Matrix server
 	location /.well-known/matrix {
 		proxy_pass https://${MATRIX_HOSTNAME};
@@ -37,7 +33,36 @@ server {
 
 	# separate Mastodon WEB_DOMAIN and LOCAL_DOMAIN
 	location = /.well-known/host-meta {
-		return 301 https://${MASTODON_HOSTNAME}$request_uri;
+		return 302 https://${MASTODON_HOSTNAME}$request_uri;
+	}
+
+	# tilde club home directories
+	location ~ ^/~(.+?)(/.*)?$ {
+		alias /home/$1/public_html$2;
+		index index.html index.htm;
+		autoindex on;
+	}
+
+	# /html files are served from the static html site
+	location /html {
+		root /var/www;
+		autoindex off;
+	}
+
+	# default home page goes to hedgedoc document "Main_Page"; please add your own content!
+	location = / {
+		return 302 https://${DOMAIN_NAME}/Main_Page;
+	}
+	# normal pages go to hedgedoc static site (need to define ports in the env)
+	# need to rewrite the CSP so that it allows reframing from the main site
+	location / {
+		proxy_hide_header Content-Security-Policy;
+		add_header Content-Security-Policy "script-src 'self' 'unsafe-inline' 'unsafe-eval' *.${DOMAIN_NAME}; frame-src 'self' *.${DOMAIN_NAME}; object-src 'self'; base-uri 'self' *.${DOMAIN_NAME}";
+		proxy_pass http://host.docker.internal:3000/s$request_uri;
+	}
+	# while javascript and config stuff goes to non-static hedgedoc site
+	location ~ ^/(js|build|config) {
+		proxy_pass http://host.docker.internal:3000$request_uri;
 	}
 
 	listen 443 ssl default_server;
@@ -48,5 +73,3 @@ server {
 	ssl_dhparam /etc/nginx/includes/ssl-dhparams.pem;
 
 }
-
-

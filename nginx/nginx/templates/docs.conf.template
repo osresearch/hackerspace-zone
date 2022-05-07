@@ -31,6 +31,17 @@ server {
 		proxy_set_header X-Forwarded-Proto $scheme;
 	}
 
+	# allow the fonts to be used by anything
+	location ~* \.(eot|otf|ttf|woff|woff2)$ {
+		add_header Access-Control-Allow-Origin *;
+		proxy_pass http://host.docker.internal:3000;
+		proxy_set_header Host $host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header X-Forwarded-Proto $scheme;
+	}
+
+	# websocket traffic with extra headers for upgrading the connection
         location /socket.io/ {
                 proxy_pass http://host.docker.internal:3000;
                 proxy_set_header Host $host; 
@@ -48,5 +59,3 @@ server {
 	include /etc/nginx/includes/challenge.conf;
 	ssl_dhparam /etc/nginx/includes/ssl-dhparams.pem;
 }
-
-

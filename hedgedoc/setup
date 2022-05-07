@@ -6,7 +6,8 @@ cd "$DIRNAME"
 source ../env.production || die "no top levle env?"
 source env.production || die "no local env?"
 
-SECRETS="../data/hedgedoc/env.secrets"
+DATA="../data/hedgedoc"
+SECRETS="$DATA/env.secrets"
 
 if [ -r "$SECRETS" ]; then
 	docker-compose up -d || die "hedgedoc: unable to start"
@@ -19,7 +20,9 @@ docker-compose down 2>/dev/null
 CLIENT_SECRET="$(openssl rand -hex 20)"
 SESSION_SECRET="$(openssl rand -hex 20)"
 
-mkdir -p "$(dirname "$SECRETS")"
+mkdir -p "$DATA/uploads"
+chmod 666 "$DATA/uploads"
+
 cat <<EOF > "$SECRETS"
 # DO NOT CHECK IN
 CMD_OAUTH2_CLIENT_SECRET=$CLIENT_SECRET
