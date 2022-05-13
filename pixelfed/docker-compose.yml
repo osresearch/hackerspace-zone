@@ -1,0 +1,73 @@
+---
+version: '3'
+
+services:
+## App and Worker
+  app:
+    image: osresearch/pixelfed
+    restart: unless-stopped
+    env_file:
+      - ../env.production
+      - env.production
+      - ../data/pixelfed/env.secrets
+    volumes:
+      - ../data/pixelfed/app-storage:/var/www/storage
+      - ../data/pixelfed/app-bootstrap:/var/www/bootstrap
+      - ../data/pixelfed/env.secrets:/var/www/.env
+    networks:
+      - external
+      - internal
+    ports:
+      - "8090:80"
+    depends_on:
+      - db
+      - redis
+
+  worker:
+    image: osresearch/pixelfed
+    restart: unless-stopped
+    env_file:
+      - ../env.production
+      - env.production
+      - ../data/pixelfed/env.secrets
+    volumes:
+      - ../data/pixelfed/app-storage:/var/www/storage
+      - ../data/pixelfed/app-bootstrap:/var/www/bootstrap
+      - ../data/pixelfed/env.secrets:/var/www/.env
+    networks:
+      - external
+      - internal
+    command: gosu www-data php artisan horizon
+    depends_on:
+      - db
+      - redis
+
+## DB and Cache
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    networks:
+      - internal
+    command: --default-authentication-plugin=mysql_native_password
+    env_file:
+      - ../env.production
+      - env.production
+    volumes:
+      - "../data/pixelfed/db-data:/var/lib/mysql"
+
+  redis:
+    image: redis:5-alpine
+    restart: unless-stopped
+    env_file:
+      - ../env.production
+      - env.production
+    volumes:
+      - "../data/pixelfed/redis-data:/data"
+    networks:
+      - internal
+
+networks:
+  internal:
+    internal: true
+  external:
+    driver: bridge

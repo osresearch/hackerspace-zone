@@ -1,0 +1,95 @@
+#!/bin/bash
+MODULE=pixelfed
+die() { echo >&2 "$MODULE: $@" ; exit 1 ; }
+info() { echo >&2 "$MODULE: $@" ; }
+
+DIRNAME="$(dirname $0)"
+cd "$DIRNAME"
+source ../env.production || die "no top level env?"
+source env.production || die "no local env?"
+source ../env.smtp 2>/dev/null
+
+DATA="../data/$MODULE"
+SECRETS="$DATA/env.secrets"
+
+if [ -r "$SECRETS" ]; then
+	docker-compose up -d || die "unable to start"
+	exit 0
+fi
+
+docker-compose down 2>/dev/null
+
+CLIENT_SECRET="$(openssl rand -hex 20)"
+
+mkdir -p "$(dirname "$SECRETS")"
+cat <<EOF > "$SECRETS"
+# DO NOT CHECK IN
+INSTANCE_DESCRIPTION="${DOMAIN_NAME} pixelfed"
+OIDC_CLIENT_ID=$MODULE
+OIDC_CLIENT_SECRET=${CLIENT_SECRET}
+OIDC_PROVIDER_URL=https://${KEYCLOAK_HOSTNAME}/realms/${REALM}
+APP_NAME="${DOMAIN_NAME} Pixelfed"
+APP_URL="https://${PIXELFED_HOSTNAME}"
+APP_DOMAIN="${PIXELFED_HOSTNAME}"
+ADMIN_DOMAIN="${PIXELFED_HOSTNAME}"
+SESSION_DOMAIN="${PIXELFED_HOSTNAME}"
+EOF
+
+if [ -n "$SMTP_SERVER" ]; then
+	cat <<EOF >> "$SECRETS"
+MAIL_DRIVER=log
+MAIL_HOST=${SMTP_SERVER}
+MAIL_PORT=${SMTP_PORT}
+MAIL_FROM_ADDRESS="pixelfed@${DOMAIN_NAME}"
+MAIL_FROM_NAME="Pixelfed"
+MAIL_USERNAME="${SMTP_USER}"
+MAIL_PASSWORD="${SMTP_PASSWORD}"
+# MAIL_ENCRYPTION=null
+EOF
+fi
+
+chown www-data:www-data "$SECRETS"
+
+../keycloak/client-delete $MODULE 2>/dev/null
+
+../keycloak/client-create <<EOF || die "unable to create client"
+{
+	"clientId": "$MODULE",
+	"rootUrl": "https://$PIXELFED_HOSTNAME",
+	"adminUrl": "https://$PIXELFED_HOSTNAME",
+	"redirectUris": [ "https://$PIXELFED_HOSTNAME/*" ],
+	"webOrigins": [ "https://$PIXELFED_HOSTNAME" ],
+	"clientAuthenticatorType": "client-secret",
+	"secret": "$CLIENT_SECRET"
+}
+EOF
+
+# setup some of the bootstrap and data directories
+mkdir -p "$DATA/app-bootstrap/cache" || die "mkdir bootstrap/cache"
+cp ./app.php "$DATA/app-bootstrap" || die "cp app.php"
+chown -R www-data:www-data "$DATA/app-bootstrap" || die "chown bootstrap"
+
+docker-compose up -d || die "unable to start container"
+
+# need to wait for stuff to finish setup
+info "Sleeping while stuff starts"
+sleep 20
+
+# some of these are to work around docker file weirdness that expects the volume to be prepopulated
+#docker-compose exec app bash -c "touch .env && chown www-data:www-data .env" || die ".env create"
+#docker-compose exec app cp -R storage.skel storage || die "storage create"
+
+#docker-compose exec -u www-data app composer install --prefer-dist --no-interaction --no-ansi --optimize-autoloader || die "composer install"
+docker-compose exec -u www-data app php artisan key:generate || die "key:generate"
+docker-compose exec -u www-data app php artisan storage:link || die "storage:link"
+docker-compose exec -u www-data app php artisan migrate --force || die "migrate"
+#docker-compose exec app php artisan import:cities || die "import:cities"
+docker-compose exec -u www-data app php artisan instance:actor || die "instance:actor"
+docker-compose exec -u www-data app php artisan passport:keys || die "passport:keys"
+docker-compose exec -u www-data app php artisan route:cache || die "route:cache"
+docker-compose exec -u www-data app php artisan view:cache || die "view:cache"
+docker-compose exec -u www-data app php artisan config:cache || die "config:cache"
+
+#php artisan route:clear
+#php artisan view:clear
+#php artisan config:clear
