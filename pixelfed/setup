@@ -24,6 +24,7 @@ CLIENT_SECRET="$(openssl rand -hex 20)"
 mkdir -p "$(dirname "$SECRETS")"
 cat <<EOF > "$SECRETS"
 # DO NOT CHECK IN
+APP_KEY=
 INSTANCE_DESCRIPTION="${DOMAIN_NAME} pixelfed"
 OIDC_CLIENT_ID=$MODULE
 OIDC_CLIENT_SECRET=${CLIENT_SECRET}
@@ -89,6 +90,10 @@ docker-compose exec -u www-data app php artisan passport:keys || die "passport:k
 docker-compose exec -u www-data app php artisan route:cache || die "route:cache"
 docker-compose exec -u www-data app php artisan view:cache || die "view:cache"
 docker-compose exec -u www-data app php artisan config:cache || die "config:cache"
+
+# bounce it to reload all of the state
+docker-compose down || die "unable to bring down"
+docker-compose up -d || die "unable to restart"
 
 #php artisan route:clear
 #php artisan view:clear
