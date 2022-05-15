@@ -56,12 +56,23 @@ server {
 	# normal pages go to hedgedoc static site (need to define ports in the env)
 	# need to rewrite the CSP so that it allows reframing from the main site
 	location / {
+		proxy_cache mycache;
+		add_header X-Cache-Status $upstream_cache_status;
+		proxy_ignore_headers Cache-Control;
+
 		proxy_hide_header Content-Security-Policy;
 		add_header Content-Security-Policy "script-src 'self' 'unsafe-inline' 'unsafe-eval' *.${DOMAIN_NAME}; frame-src 'self' *.${DOMAIN_NAME}; object-src 'self'; base-uri 'self' *.${DOMAIN_NAME}";
 		proxy_pass http://host.docker.internal:3000/s$request_uri;
+		proxy_cache_valid any 1m;
+
 	}
 	# while javascript and config stuff goes to non-static hedgedoc site
-	location ~ ^/(js|build|config) {
+	location ~ ^/(js|build|config$) {
+		proxy_cache mycache;
+		add_header X-Cache-Status $upstream_cache_status;
+		proxy_ignore_headers Cache-Control;
+		proxy_cache_valid any 1m;
+
 		proxy_pass http://host.docker.internal:3000$request_uri;
 	}
 

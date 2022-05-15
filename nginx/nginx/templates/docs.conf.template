@@ -20,6 +20,10 @@ server {
 
 	proxy_read_timeout 1800s;
 
+	proxy_cache mycache;
+	proxy_cache_valid any 1m;
+	add_header X-Cache-Status $upstream_cache_status;
+
 	# required to avoid HTTP 411: see Issue #1486 (https://github.com/dotcloud/docker/issues/1486)
 	chunked_transfer_encoding on;
 
