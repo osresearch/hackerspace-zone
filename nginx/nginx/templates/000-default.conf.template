@@ -53,6 +53,10 @@ server {
 	location = / {
 		return 302 https://${DOMAIN_NAME}/Main_Page;
 	}
+	# rewrite /s/ links to the bare link
+	location ~ ^/s/(.*) {
+		return 302 https://${DOMAIN_NAME}/$1;
+	}
 	# normal pages go to hedgedoc static site (need to define ports in the env)
 	# need to rewrite the CSP so that it allows reframing from the main site
 	location / {
