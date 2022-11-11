@@ -5,6 +5,7 @@ MODULES += grafana
 MODULES += prometheus
 MODULES += mastodon
 MODULES += matrix
+MODULES += nextcloud
 #MODULES += pixelfed
 
 include env.production
@@ -41,6 +42,8 @@ matrix-shell:
 	$(DOCKER) exec matrix-synapse bash
 matrix-logs:
 	$(DOCKER) logs -f matrix-synapse
+nextcloud-logs:
+	$(DOCKER) logs -f nextcloud
 nginx-build: data/nginx/secrets
 	$(DOCKER) build nginx
 
