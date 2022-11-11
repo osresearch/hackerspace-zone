@@ -2,13 +2,18 @@ version: '3'
 services:
   prometheus:
     image: prom/prometheus
+    restart: always
     container_name: prometheus
+    user: root
     volumes:
-      - ./data/prometheus/storage:/prometheus
+      - ./data/prometheus/storage:/prometheus:rw
       - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/entrypoint.sh"]
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
+    restart: always
     container_name: cadvisor
     volumes:
     - /:/rootfs:ro
