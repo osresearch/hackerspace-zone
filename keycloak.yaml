@@ -42,6 +42,9 @@ services:
       depends_on:
         - keycloak-db
 
+  # all of the various subdomains can install files in
+  # /keycloak-setup/ to be executed during the setup phase
+  # to enable their clients using the client-create tool
   keycloak-setup:
         image: quay.io/keycloak/keycloak:18.0.0
         profiles:
@@ -52,9 +55,10 @@ services:
         env_file:
           - env.production
           - data/keycloak/secrets
-        entrypoint: /keycloak-setup.sh
+        entrypoint: /entrypoint.sh
         volumes:
-          - ./keycloak/setup:/keycloak-setup.sh:ro
+          - ./keycloak/entrypoint-setup.sh:/entrypoint.sh:ro
+          - ./keycloak/mail-setup.sh:/keycloak-setup/mail-setup.sh:ro
           - ./keycloak/client-create:/bin/client-create:ro
 
   # add the keycloak nginx configuration into the nginx volume
