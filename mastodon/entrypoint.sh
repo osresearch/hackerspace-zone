@@ -1,19 +1,13 @@
 #!/bin/bash -x
 
-id
-export
-pwd
 rm -f /mastodon/tmp/pids/server.pid
 
 export MASTODON_DIR=/mastodon/public/system
 export VAPID_KEY="$MASTODON_DIR/vapid_key"
 export DB_SETUP="$MASTODON_DIR/db_done"
 
-
-which rails
 chown -R mastodon:mastodon "$MASTODON_DIR"
 
-#exec su mastodon /bin/bash - <<EOF
 exec su mastodon <<EOF
 
 export PATH="$PATH:/opt/ruby/bin:/opt/node/bin:/opt/mastodon/bin"
