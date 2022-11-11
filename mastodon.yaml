@@ -1,0 +1,198 @@
+version: '3'
+services:
+  mastodon-db:
+    image: postgres:13.4-alpine
+    restart: always
+    container_name: mastodon-db
+    #shm_size: 256mb
+#    networks:
+#      - internal_network
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', "mastodon", "-d", "mastodon_production"]
+    volumes:
+      - ./data/mastodon/database:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=mastodon
+      - POSTGRES_PASSWORD=mastodon
+        #- POSTGRES_DB=mastodon_production
+    env_file:
+      - mastodon/env.production
+
+  mastodon-redis:
+    image: redis:6-alpine
+    restart: always
+    container_name: mastodon-redis
+#    networks:
+#      - internal_network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+    env_file:
+      - mastodon/env.production
+    volumes:
+      - ./data/mastodon/redis:/data
+
+  mastodon-es:
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:7.10.2
+    restart: always
+    container_name: mastodon-es
+    environment:
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "cluster.name=es-mastodon"
+      - "discovery.type=single-node"
+      - "bootstrap.memory_lock=true"
+    env_file:
+      - mastodon/env.production
+#    networks:
+#       - internal_network
+    healthcheck:
+       test: ["CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health || exit 1"]
+    volumes:
+       - ./data/mastodon/elasticsearch:/usr/share/elasticsearch/data
+    # fixup the permissions on the data directory since they are created as root on host
+    entrypoint: ["/bin/sh", "-c", "chown -R elasticsearch:elasticsearch data && exec /usr/local/bin/docker-entrypoint.sh eswrapper"]
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+  mastodon:
+    image: tootsuite/mastodon
+    container_name: mastodon
+    restart: always
+    #command: bash -c "rm -f /mastodon/tmp/pids/server.pid; bundle exec rails s -p 6001"
+    user: "0:0"
+    command: ["/entrypoint.sh"]
+#    networks:
+#      - external_network
+#      - internal_network
+    healthcheck:
+      # prettier-ignore
+      test: ['CMD-SHELL', 'wget -q --spider --proxy=off localhost:6001/health || exit 1']
+      #    ports:
+      #- '6001:6001'
+    depends_on:
+      - mastodon-db
+      - mastodon-redis
+      - mastodon-es
+    volumes:
+      - ./data/mastodon/system:/mastodon/public/system
+      - ./mastodon/entrypoint.sh:/entrypoint.sh:ro
+    env_file:
+      - mastodon/env.production
+    environment:
+      - WEB_DOMAIN=$MASTODON_HOSTNAME.$DOMAIN_NAME
+      - LOCAL_DOMAIN=$DOMAIN_NAME
+      - OIDC_DISPLAY_NAME=$REALM
+      - OIDC_ISSUER=https://$KEYCLOAK_HOSTNAME.$DOMAIN_NAME/realms/$REALM
+      - OIDC_REDIRECT_URI=https://$MASTODON_HOSTNAME.$DOMAIN_NAME/auth/auth/openid_connect/callback
+      - OIDC_CLIENT_SECRET=${MASTODON_CLIENT_SECRET}
+      - SECRET_KEY_BASE=${MASTODON_ADMIN_PASSWORD}
+      - OTP_SECRET=${MASTODON_SESSION_SECRET}
+      - SMTP_SERVER=$SMTP_SERVER
+      - SMTP_PORT=$SMTP_PORT
+      - SMTP_LOGIN=$SMTP_USER
+      - SMTP_PASSWORD=$SMTP_PASSWORD
+      - SMTP_FROM_ADDRESS=mastodon@$DOMAIN_NAME
+
+  mastodon-streaming:
+    image: tootsuite/mastodon
+    restart: always
+    container_name: mastodon-streaming
+    environment:
+      - WEB_DOMAIN=$MASTODON_HOSTNAME.$DOMAIN_NAME
+      - LOCAL_DOMAIN=$DOMAIN_NAME
+      - OIDC_DISPLAY_NAME=$REALM
+      - OIDC_ISSUER=https://$KEYCLOAK_HOSTNAME.$DOMAIN_NAME/realms/$REALM
+      - OIDC_REDIRECT_URI=https://$MASTODON_HOSTNAME.$DOMAIN_NAME/auth/auth/openid_connect/callback
+      - OIDC_CLIENT_SECRET=${MASTODON_CLIENT_SECRET}
+      - SECRET_KEY_BASE=${MASTODON_ADMIN_PASSWORD}
+      - OTP_SECRET=${MASTODON_SESSION_SECRET}
+      - SMTP_SERVER=$SMTP_SERVER
+      - SMTP_PORT=$SMTP_PORT
+      - SMTP_LOGIN=$SMTP_USER
+      - SMTP_PASSWORD=$SMTP_PASSWORD
+      - SMTP_FROM_ADDRESS=mastodon@$DOMAIN_NAME
+    env_file:
+      - mastodon/env.production
+    command: node ./streaming
+#    networks:
+#      - external_network
+#      - internal_network
+    volumes:
+      - ./data/mastodon/system:/mastodon/public/system
+    healthcheck:
+      # prettier-ignore
+      test: ['CMD-SHELL', 'wget -q --spider --proxy=off localhost:4000/api/v1/streaming/health || exit 1']
+    depends_on:
+      - mastodon-db
+      - mastodon-redis
+
+  mastodon-sidekiq:
+    image: tootsuite/mastodon
+    restart: always
+    container_name: mastodon-sidekiq
+    env_file:
+      - mastodon/env.production
+    environment:
+      - WEB_DOMAIN=$MASTODON_HOSTNAME.$DOMAIN_NAME
+      - LOCAL_DOMAIN=$DOMAIN_NAME
+      - OIDC_DISPLAY_NAME=$REALM
+      - OIDC_ISSUER=https://$KEYCLOAK_HOSTNAME.$DOMAIN_NAME/realms/$REALM
+      - OIDC_REDIRECT_URI=https://$MASTODON_HOSTNAME.$DOMAIN_NAME/auth/auth/openid_connect/callback
+      - OIDC_CLIENT_SECRET=${MASTODON_CLIENT_SECRET}
+      - SECRET_KEY_BASE=${MASTODON_ADMIN_PASSWORD}
+      - OTP_SECRET=${MASTODON_SESSION_SECRET}
+      - SMTP_SERVER=$SMTP_SERVER
+      - SMTP_PORT=$SMTP_PORT
+      - SMTP_LOGIN=$SMTP_USER
+      - SMTP_PASSWORD=$SMTP_PASSWORD
+      - SMTP_FROM_ADDRESS=mastodon@$DOMAIN_NAME
+    command: bundle exec sidekiq
+    depends_on:
+      - mastodon-db
+      - mastodon-redis
+#    networks:
+#      - external_network
+#      - internal_network
+    volumes:
+      - ./data/mastodon/system:/mastodon/public/system
+    healthcheck:
+      test: ['CMD-SHELL', "ps aux | grep '[s]idekiq\ 6' || false"]
+
+  ## Uncomment to enable federation with tor instances along with adding the following ENV variables
+  ## http_proxy=http://privoxy:8118
+  ## ALLOW_ACCESS_TO_HIDDEN_SERVICE=true
+  # tor:
+  #   image: sirboops/tor
+  #   networks:
+  #      - external_network
+  #      - internal_network
+  #
+  # privoxy:
+  #   image: sirboops/privoxy
+  #   volumes:
+  #     - ./priv-config:/opt/config
+  #   networks:
+  #     - external_network
+  #     - internal_network
+
+  # add the subdomain nginx configuration into the nginx volume
+  # as well as the cache directory so that nginx can send files directly from it
+  nginx:
+    volumes:
+      - ./mastodon/nginx.conf:/etc/nginx/templates/mastodon.conf.template:ro
+      - ./data/mastodon/system/cache:/mastodon/system/cache:ro
+      - ./data/mastodon/system/media_attachments:/mastodon/system/media_attachments:ro
+      - ./data/mastodon/system/accounts:/mastodon/system/accounts:ro
+
+  # add the subdomain client secrets to the keycloak-setup volume
+  keycloak-setup:
+    env_file:
+      - data/mastodon/secrets
+    volumes:
+      - ./mastodon/keycloak.sh:/keycloak-setup/mastodon.sh:ro
+
+#networks:
+#  external_network:
+#  internal_network:
+#    internal: true

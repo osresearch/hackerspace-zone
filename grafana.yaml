@@ -1,0 +1,41 @@
+version: "3"
+services:
+  grafana:
+    image: grafana/grafana-oss:8.5.1
+    container_name: grafana
+    user: "0:0"
+    environment:
+      GF_AUTH_GENERIC_OAUTH_ENABLED: 'True'
+      GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP: 'True' # otherwise no login is possible
+      #GF_AUTH_GENERIC_OAUTH_TEAM_IDS: ''
+      #GF_AUTH_GENERIC_OAUTH_ALLOWED_ORGANIZATIONS: ''
+      #GF_AUTH_GENERIC_OAUTH_ALLOWED_DOMAINS: '<domains>'
+      #GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD} # ignored?
+      GF_AUTH_GENERIC_OAUTH_NAME: Keycloak
+      GF_AUTH_GENERIC_OAUTH_CLIENT_ID: grafana
+      GF_AUTH_GENERIC_OAUTH_SCOPES: openid profile email
+      GF_SERVER_ROOT_URL: https://${GRAFANA_HOSTNAME}.${DOMAIN_NAME}/
+      GF_SERVER_DOMAIN: ${GRAFANA_HOSTNAME}.${DOMAIN_NAME}
+      GF_AUTH_GENERIC_OAUTH_AUTH_URL: ${AUTH_URL}
+      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: ${TOKEN_URL}
+      GF_AUTH_GENERIC_OAUTH_API_URL: ${USERINFO_URL}
+      GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: ${GRAFANA_CLIENT_SECRET}
+    # reset the admin password on every run, since otherwise it defaults to admin/admin
+    entrypoint: ["sh", "-c", "grafana-cli admin reset-admin-password ${GRAFANA_ADMIN_PASSWORD} && /run.sh"]
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+    restart: always
+    #    ports:
+    #  - 3000:3000
+
+  # add the grafana nginx configuration into the nginx volume
+  nginx:
+    volumes:
+      - ./grafana/nginx.conf:/etc/nginx/templates/grafana.conf.template:ro
+
+  # add the grafana client secrets to the keycloak-setup volume
+  keycloak-setup:
+    env_file:
+      - data/grafana/secrets
+    volumes:
+      - ./grafana/keycloak.sh:/keycloak-setup/grafana.sh:ro

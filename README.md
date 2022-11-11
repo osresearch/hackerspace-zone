@@ -8,6 +8,7 @@ Infrastructure for the self-hosted, single-sign-on, community-run services.
 
 ```
 apt install jq docker-compose
+apt install prometheus
 ```
 
 * Setup each of the services. `keycloak` and `nginx` are required to start the others:

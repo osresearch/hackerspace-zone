@@ -1,0 +1,63 @@
+version: '3.9'
+services:
+  keycloak-db:
+      image: mysql:5.7
+      restart: always
+      container_name: keycloak-db
+      volumes:
+        - ./data/keycloak/database:/var/lib/mysql
+      environment:
+        MYSQL_ROOT_PASSWORD: root
+        MYSQL_DATABASE: keycloak
+        MYSQL_USER: keycloak
+        MYSQL_PASSWORD: password
+
+  keycloak:
+      image: quay.io/keycloak/keycloak:18.0.0
+      restart: always
+      container_name: keycloak
+      entrypoint: /opt/keycloak/bin/kc.sh start --hostname="$${KEYCLOAK_HOSTNAME}.$${DOMAIN_NAME}" --proxy=edge
+#      healthcheck:
+#        test: ["CMD", "curl", "-f", "http://localhost:8080"]
+#        interval: 30s
+#        timeout: 10s
+#        retries: 3
+      user: "0:0" # otherwise the persistent data directory is not writable
+      env_file:
+        - env.production
+        - data/keycloak/secrets
+      environment:
+        DB_VENDOR: MYSQL
+        DB_ADDR: keycloak-db
+        DB_DATABASE: keycloak
+        DB_USER: keycloak
+        DB_PASSWORD: password
+        KEYCLOAK_ADMIN: admin
+        KEYCLOAK_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+        PROXY_ADDRESS_FORWARDING: 'true'
+        # KEYCLOAK_ADMIN_PASSWORD is set in env.secrets
+      volumes:
+        - ./data/keycloak/certs:/etc/x509/https
+        - ./data/keycloak/keycloak:/opt/keycloak/data
+      depends_on:
+        - keycloak-db
+
+  keycloak-setup:
+        image: quay.io/keycloak/keycloak:18.0.0
+        profiles:
+          - setup
+        depends_on:
+          - keycloak
+        restart: never
+        env_file:
+          - env.production
+          - data/keycloak/secrets
+        entrypoint: /keycloak-setup.sh
+        volumes:
+          - ./keycloak/setup:/keycloak-setup.sh:ro
+          - ./keycloak/client-create:/bin/client-create:ro
+
+  # add the keycloak nginx configuration into the nginx volume
+  nginx:
+    volumes:
+      - ./keycloak/nginx.conf:/etc/nginx/templates/keycloak.conf.template:ro
