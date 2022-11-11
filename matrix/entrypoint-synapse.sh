@@ -22,6 +22,7 @@ if [ ! -r "$HOMESERVER_YAML" ]; then
 #
 # added by hackerspace-zone setup scripts
 #
+enable_metrics: true
 suppress_key_server_warning: true
 web_client_location: https://${MATRIX_HOSTNAME}.${DOMAIN_NAME}
 public_baseurl: https://${MATRIX_HOSTNAME}.${DOMAIN_NAME}
@@ -37,6 +38,11 @@ oidc_providers:
         localpart_template: "{{ user.preferred_username }}"
         display_name_template: "{{ user.name }}"
 EOF
+
+# enable promemtheus metrics on a local-only port
+# since this is in docker, it won't be exposed to any outside connections
+	echo >&2 "**** Enabling prometheus metrics ****"
+	sed -i -e '/^listeners:/a\  - port: 9000\n    type: metrics\n' "$HOMESERVER_YAML"
 
 fi
 

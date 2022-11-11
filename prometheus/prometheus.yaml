@@ -19,3 +19,8 @@ scrape_configs:
       - targets: ['172.17.0.1:9100']
       # cadvisor system
       - targets: ['cadvisor:8080']
+  - job_name: "synapse"
+    scrape_interval: 15s
+    metrics_path: "/_synapse/metrics"
+    static_configs:
+      - targets: ["matrix-synapse:9000"]
