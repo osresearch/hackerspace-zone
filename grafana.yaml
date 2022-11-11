@@ -23,7 +23,9 @@ services:
     # reset the admin password on every run, since otherwise it defaults to admin/admin
     entrypoint: ["sh", "-c", "grafana-cli admin reset-admin-password ${GRAFANA_ADMIN_PASSWORD} && /run.sh"]
     volumes:
-      - ./data/grafana:/var/lib/grafana
+      - ./data/grafana/data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
     restart: always
     #    ports:
     #  - 3000:3000
