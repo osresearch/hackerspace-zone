@@ -1,0 +1,62 @@
+version: "3"
+
+services:
+  mobilizon:
+    image: framasoft/mobilizon
+    container_name: mobilizon
+    restart: always
+    volumes:
+      - ./data/mobilizon/uploads:/var/lib/mobilizon/uploads
+      - ./mobilizon/config.exs:/etc/mobilizon/config.exs:ro
+    environment:
+      - KEYCLOAK_HOSTNAME=${KEYCLOAK_HOSTNAME}.${DOMAIN_NAME}
+      - REALM=${REALM}
+      - MOBILIZON_INSTANCE_NAME=${MOBILIZON_HOSTNAME}.${DOMAIN_NAME}
+      - MOBILIZON_INSTANCE_HOST=${MOBILIZON_HOSTNAME}.${DOMAIN_NAME}
+      - MOBILIZON_INSTANCE_SECRET_KEY_BASE=${MOBILIZON_ADMIN_PASSWORD}
+      - MOBILIZON_INSTANCE_SECRET_KEY=${MOBILIZON_SESSION_SECRET}
+      - MOBILIZON_CLIENT_SECRET=${MOBILIZON_CLIENT_SECRET}
+      - MOBILIZON_INSTANCE_EMAIL=events@${DOMAIN_NAME}
+      - MOBILIZON_REPLY_EMAIL=noreply@${DOMAIN_NAME}
+      - MOBILIZON_SMTP_SERVER=${SMTP_SERVER}
+      - MOBILIZON_SMTP_PORT=${SMTP_PORT}
+      - MOBILIZON_SMTP_USERNAME=${SMTP_USER}
+      - MOBILIZON_SMTP_PASSWORD=${SMTP_PASSWORD}
+      - MOBILIZON_SMTP_SSL=true
+      - MOBILIZON_DATABASE_USERNAME=mobilizon
+      - MOBILIZON_DATABASE_PASSWORD=mobilizon
+      - MOBILIZON_DATABASE_DBNAME=mobilizon
+      - MOBILIZON_DATABASE_HOST=mobilizon-db
+      - MOBILIZON_INSTANCE_REGISTRATIONS_OPEN=false
+      - MOBILIZON_INSTANCE_PORT=7000
+    user: root
+    entrypoint:
+      - "/bin/sh"
+      - "-c"
+      - "chmod 777 /var/lib/mobilizon/uploads && exec su -p nobody -s /bin/sh /docker-entrypoint.sh"
+
+#    ports:
+#      - "7000:7000"
+
+  mobilizon-db:
+    image: postgis/postgis:13-3.1
+    container_name: mobilizon-db
+    restart: always
+    volumes:
+      - ./data/mobilizon/db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=mobilizon
+      - POSTGRES_PASSWORD=mobilizon
+      - POSTGRES_DB=mobilizon
+
+  # add the nginx configuration into the nginx volume
+  nginx:
+    volumes:
+      - ./mobilizon/nginx.conf:/etc/nginx/templates/mobilizon.conf.template:ro
+
+  # add the client secrets to the keycloak-setup volume
+  keycloak-setup:
+    env_file:
+      - data/mobilizon/secrets
+    volumes:
+      - ./mobilizon/keycloak.sh:/keycloak-setup/mobilizon.sh:ro

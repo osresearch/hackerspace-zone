@@ -6,6 +6,7 @@ MODULES += prometheus
 MODULES += mastodon
 MODULES += matrix
 MODULES += nextcloud
+MODULES += mobilizon
 #MODULES += pixelfed
 
 include env.production
