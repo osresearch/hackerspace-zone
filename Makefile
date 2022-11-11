@@ -4,6 +4,7 @@ MODULES += hedgedoc
 MODULES += grafana
 MODULES += prometheus
 MODULES += mastodon
+MODULES += matrix
 #MODULES += pixelfed
 
 include env.production
@@ -36,6 +37,10 @@ mastodon-shell:
 	$(DOCKER) exec mastodon bash
 mastodon-streaming-shell:
 	$(DOCKER) exec mastodon-streaming bash
+matrix-shell:
+	$(DOCKER) exec matrix-synapse bash
+matrix-logs:
+	$(DOCKER) logs -f matrix-synapse
 nginx-build: data/nginx/secrets
 	$(DOCKER) build nginx
 

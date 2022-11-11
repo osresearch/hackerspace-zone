@@ -11,6 +11,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "8448:8448"
     volumes:
       - ./nginx/etc/includes:/etc/nginx/includes:ro
       - ./nginx/etc/nginx.conf:/etc/nginx/nginx.conf:ro
