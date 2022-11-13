@@ -7,6 +7,7 @@ MODULES += mastodon
 MODULES += matrix
 MODULES += nextcloud
 MODULES += mobilizon
+MODULES += gitea
 #MODULES += pixelfed
 
 include env.production
@@ -65,6 +66,12 @@ data/%/secrets:
 	echo >>$@ "export $(GET_MODULE)_ADMIN_PASSWORD=$(call RAND,8)"
 	echo >>$@ "export $(GET_MODULE)_CLIENT_SECRET=$(call RAND,20)"
 	echo >>$@ "export $(GET_MODULE)_SESSION_SECRET=$(call RAND,20)"
+
+data/gitea/secrets: data/gitea/host-setup.done
+data/gitea/host-setup.done:
+	sudo ./gitea/host-setup.sh
+	mkdir -p $(dir $@)
+	touch $@
 
 keycloak-setup: secrets-setup
 	$(DOCKER) run keycloak-setup
