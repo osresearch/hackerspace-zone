@@ -1,0 +1,26 @@
+global:
+  scrape_interval: 15s 
+  external_labels:
+    monitor: 'codelab-monitor'
+ 
+scrape_configs:  
+  # nginx vts data
+  - job_name: 'nginx'
+    scrape_interval: 5s
+    metrics_path: "/status/format/prometheus"
+    static_configs:
+      - targets: ['nginx:80']
+  - job_name: 'metrics'
+    scrape_interval: 5s
+    static_configs:
+      # grafana data from /metrics
+      - targets: ['dashboard:3000']
+      # host running the docker-compose 
+      - targets: ['172.17.0.1:9100']
+      # cadvisor system
+      - targets: ['cadvisor:8080']
+  - job_name: "synapse"
+    scrape_interval: 15s
+    metrics_path: "/_synapse/metrics"
+    static_configs:
+      - targets: ["matrix-synapse:9000"]

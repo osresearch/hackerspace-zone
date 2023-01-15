@@ -2,3 +2,6 @@
 data
 *.secrets
 env.smtp
+*.old
+*.log
+test

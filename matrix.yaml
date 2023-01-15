@@ -1,0 +1,56 @@
+version: '3'
+services:
+# the default synpase uses a sqlite database; this should be fixed at somepoint
+#  matrix-db:
+#    image: postgres:13.4-alpine
+#    restart: unless-stopped
+#    volumes:
+#     - ./data/matrix/db:/var/lib/postgresql/data
+#    environment:
+#     - POSTGRES_DB=synapse
+#     - POSTGRES_USER=synapse
+#     - POSTGRES_PASSWORD=STRONGPASSWORD
+     
+  matrix-element:
+    image: vectorim/element-web:latest
+    restart: unless-stopped
+    container_name: matrix-element
+    env_file:
+     - env.production
+    volumes:
+      - ./matrix/10-envsubst-config.sh:/docker-entrypoint.d/10-envsubst-config.sh:ro
+      - ./matrix/config.sample.json:/app/config.sample.json:ro
+    depends_on:
+      - matrix-synapse
+#    ports:
+#      - "5000:80"
+
+  matrix-synapse:
+    image: matrixdotorg/synapse:latest
+    restart: unless-stopped
+    container_name: matrix-synapse
+    volumes:
+      - ./data/matrix/synapse:/data
+      - ./matrix/entrypoint-synapse.sh:/entrypoint.sh:ro
+    entrypoint: ["/entrypoint.sh"]
+    env_file:
+      - env.production
+    environment:
+      - MATRIX_CLIENT_SECRET=${MATRIX_CLIENT_SECRET}
+    depends_on:
+      - keycloak
+      - nginx
+#    ports:
+#      - "5008:8008"
+
+  # add the nginx configuration into the nginx volume
+  nginx:
+    volumes:
+      - ./matrix/nginx.conf:/etc/nginx/templates/matrix.conf.template:ro
+
+  # add the client secrets to the keycloak-setup volume
+  keycloak-setup:
+    env_file:
+      - data/matrix/secrets
+    volumes:
+      - ./matrix/keycloak.sh:/keycloak-setup/matrix.sh:ro

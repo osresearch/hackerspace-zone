@@ -1,20 +1,34 @@
 #!/bin/bash
 die() { echo >&2 "$@" ; exit 1 ; }
 
-DIRNAME="$(dirname $0)"
-cd "$DIRNAME"
+client_name="$1"
+hostname="$2"
+secret="$3"
 
-source ../env.production || die "no top levle env?"
-source env.production || die "no local env?"
-source "../data/keycloak/env.secrets" || die "no local secrets?"
+client_id="$(kcadm.sh get clients \
+	-r "$REALM" \
+	--fields id \
+	-q clientId="$client_name" \
+	--format csv \
+	--noquotes \
+)"
 
-docker-compose exec -T keycloak \
-  /opt/keycloak/bin/kcadm.sh \
-  create clients \
-  --server http://localhost:8080/ \
-  --user admin \
-  --realm master \
-  --password "$KEYCLOAK_ADMIN_PASSWORD" \
-  -r "$REALM" \
-  -f - \
-|| die "create client failed"
+if [ -n "$client_id" ]; then
+	kcadm.sh delete "clients/$client_id" -r "$REALM" || die "$client_id: unable to delete"
+fi
+
+# remember to add a leading , if adding extra data
+extra="$(cat -)"
+
+kcadm.sh create clients -r "$REALM"  -f - <<EOF || die "$client_id: unable to create"
+{
+	"clientId": "$client_name",
+	"rootUrl": "https://$hostname",
+	"adminUrl": "https://$hostname",
+	"redirectUris": [ "https://$hostname/*" ],
+	"webOrigins": [ "https://$hostname" ],
+	"clientAuthenticatorType": "client-secret",
+	"secret": "$secret"
+	$extra
+}
+EOF
